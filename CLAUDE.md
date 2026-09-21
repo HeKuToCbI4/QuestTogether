@@ -66,6 +66,13 @@ substitute: it cannot see the forward-reference bug class (see R11 in the roadma
 Anything behavioural needs a human in the game. When you change behaviour, name the
 rows of `docs/TESTING.md` that must be re-run, and add rows for new behaviour.
 
+## Pull requests
+
+- Fill in `.github/pull_request_template.md`. Plain English, short bullets, no walls
+  of text.
+- Request review from `HeKuToCbI4` (`gh pr create --reviewer HeKuToCbI4`).
+- If the PR is for an issue, mention it (`Closes #N` / `Refs #N`).
+
 ## Conventions
 
 - 4-space indent; keep each file's header comment accurate — it is the module's spec.
