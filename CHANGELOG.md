@@ -5,6 +5,10 @@ Version numbers follow the `## Version` field of `QuestTogether.toc`.
 ## Unreleased
 
 ### Fixed
+- Instance (LFG) groups: addon messages now go to `INSTANCE_CHAT` instead of `PARTY`,
+  where they reached nobody. The category constant this depends on has **not been
+  verified on this client**, so the lookup is guarded — when it is missing, behaviour
+  is unchanged. `/qt channel` is a new solo probe that measures it.
 - Quest IDs from another client are validated before use: `0`, negatives, fractions,
   `inf`/`NaN` and values above `2^31` are ignored instead of reaching the completion
   oracle or the peer cache — on inbound `Q`/`A` and on `/qt ask` alike. Zero was the

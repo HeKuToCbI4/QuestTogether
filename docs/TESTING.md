@@ -26,6 +26,7 @@ Run after every change, before anything else.
 | A9 | `/qt events`, accept a quest, `/qt events` | Trace lines for `QUEST_ACCEPTED` etc. with their arguments. **Record the `QUEST_ACCEPTED` arguments** — this closes "Still unverified" item 1. |
 | A10 | `/qt frames` | A yes/NO line per frame name. Record it (feeds Q5). |
 | A11 | `/qt ask 0`, `/qt ask 1.5`, `/qt ask -3` | `Cannot ask: invalid quest ID` — rejected before anything is sent. `/qt ask 92460` while solo still reads `Cannot ask: not in a group`, so the guard did not swallow valid IDs. |
+| A12 | `/qt channel` while solo | A block of probe lines. `channel we would use:  nil` (solo). **Record whether `LE_PARTY_CATEGORY_INSTANCE` or `Enum.PartyCategory.Instance` exists and its value** — this is the measurement the instance-group fix is waiting on ("Still unverified" item 2). No Lua error even when the constant is absent. |
 
 ---
 
@@ -77,7 +78,7 @@ Several are **known to fail today**; the expected column is the target.
 | C4 | B turns the quest in after answering "no" | A's next ask shows "yes" | Works only on a **re-ask**; the cached "no" stays until then |
 | C5 | A opens the same quest twice | One ask, not two | Deduped by quest ID — but never re-asked for a member who joined later |
 | C6 | Rapid clicking through 5+ quests | No disconnect, no missing answers | No throttle exists — observe and record |
-| C7 | Instance / LFG group | Round-trip works | `INSTANCE_CHAT` is not handled — expected to fail |
+| C7 | Instance / LFG group. Run `/qt channel` in a normal party **and** in the instance group before the round-trip | `/qt channel` prints `PARTY` in the party and `INSTANCE_CHAT` in the instance group; the round-trip then works | `INSTANCE_CHAT` is now chosen — **but the category constant is unverified on this client.** If `/qt channel` reports it absent, the channel stays `PARTY` and the round-trip still fails; record the output in MEASUREMENTS.md |
 | C8 | Cross-realm peer with the **same character name** as another peer, or as you | Distinct entries | Collide (keyed by bare name) |
 | C9 | A peer sends a zero, fractional, negative or out-of-range quest ID | Ignored silently: no answer is sent for it, nothing is cached for it | Expected to work |
 | C10 | B leaves, then A re-ask about the same quest | B is `?` again, never a stale `yes`/`no` from before they left | Expected to work |

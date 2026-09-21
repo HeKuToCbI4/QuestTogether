@@ -126,10 +126,36 @@ function ns.BaseName(s)
     return (s:match("^([^%-]+)")) or s
 end
 
----@return "RAID"|"PARTY"|nil channel   nil when solo
+-- The "instance group" category, however this client spells it. UNVERIFIED here:
+-- neither the constant nor the Enum form has been seen on Forever, so both are
+-- plain guarded lookups and a miss returns nil. /qt channel measures it.
+---@return any? category   nil when the client exposes no instance category
+function ns.InstancePartyCategory()
+    local c = _G.LE_PARTY_CATEGORY_INSTANCE
+    if c ~= nil then return c end
+    local enum = _G.Enum
+    local t = enum and enum.PartyCategory
+    if type(t) == "table" then return t.Instance end
+    return nil
+end
+
+-- An instance (LFG) group is not a party: a message sent to "PARTY" there reaches
+-- nobody, so the instance category is checked FIRST. Both the category and the
+-- IsInGroup(category) argument form are unverified on this client, so the lookup
+-- is guarded and the call is wrapped -- when either is missing or errors, the
+-- result is exactly what it was before: "RAID" / "PARTY" / nil.
+---@return "INSTANCE_CHAT"|"RAID"|"PARTY"|nil channel   nil when solo
 function ns.GroupChannel()
+    local inGroup = _G.IsInGroup
+    if inGroup then
+        local category = ns.InstancePartyCategory()
+        if category ~= nil then
+            local ok, inInstanceGroup = pcall(inGroup, category)
+            if ok and inInstanceGroup == true then return "INSTANCE_CHAT" end
+        end
+    end
     if _G.IsInRaid and _G.IsInRaid() then return "RAID" end
-    if _G.IsInGroup and _G.IsInGroup() then return "PARTY" end
+    if inGroup and inGroup() then return "PARTY" end
     return nil
 end
 
