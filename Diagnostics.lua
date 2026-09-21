@@ -1,8 +1,9 @@
 --[[----------------------------------------------------------------------------
 Diagnostics -- in-game verification for the questions still open.
 
-This entire file can be deleted before release: nothing else depends on it. It
-exists because Forever is a beta client whose API surface and event payloads are
+This entire file is meant to be deletable before release. One thing still stands in
+the way: /qt help for EVERY command is defined here (and wrapped by UI.lua), so move
+the help text out first. Nothing else depends on this file. It exists because Forever is a beta client whose API surface and event payloads are
 still moving, and guessing at those from documentation is how ships sink.
 
 The one-shot measurement probes were retired on 2026-09-21 once their answers were
