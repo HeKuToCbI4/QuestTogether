@@ -15,6 +15,13 @@ Version numbers follow the `## Version` field of `QuestTogether.toc`.
   `UI.lua` added to the module map and load order; broken anchors fixed.
 - Added `docs/TESTING.md` (solo smoke test and the two-client M0 gate checklist).
 - Stale source comments corrected (load order, auto-ask, retired probes).
+- PLAN.md split by concern into `docs/ARCHITECTURE.md`, `PROTOCOL.md`, `UX.md`,
+  `ROADMAP.md` and `MEASUREMENTS.md`; PLAN.md is now the index.
+
+### Tooling
+- `CLAUDE.md`, `.luacheckrc`, `.luarc.json`, `.gitignore`, `tools/linkcheck.py` and a
+  GitHub Actions workflow running luacheck and the link check.
+- LuaLS type annotations on the public `ns` API (comments only).
 
 ## 0.0.2
 
@@ -22,9 +29,9 @@ Version numbers follow the `## Version` field of `QuestTogether.toc`.
 - Auto-ask: opening a quest asks the group about it, once per quest ID.
 - Wire protocol revision 2: `H` / `Q` / `A`, with an "on it now" answer status.
 - One-shot measurement probes (`/qt env`, `/qt probe`, `/qt log`, `/qt scan`) retired;
-  their results are recorded in PLAN.md §12. `/qt events` and `/qt frames` remain.
+  their results are recorded in docs/MEASUREMENTS.md. `/qt events` and `/qt frames` remain.
 
-## Earlier prototypes ("v0.1" in PLAN.md)
+## Earlier prototypes ("v0.1" in the design docs)
 
 - Single-file prototype used to measure the WoW Forever client (API presence, the
   completion oracle, the `GetInfo` schema).

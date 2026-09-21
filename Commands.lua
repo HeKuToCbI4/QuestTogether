@@ -10,6 +10,7 @@ first, so that load order never matters.
 ------------------------------------------------------------------------------]]
 
 local ADDON_NAME, ns = ...
+---@cast ns QT.Namespace
 
 ns.commands = ns.commands or {}
 
@@ -37,6 +38,9 @@ end
 -- Shared ask, used by both /qt and the UI's auto-ask. Returns ok, err so a
 -- caller can choose to report the failure (manual /qt does) or stay quiet
 -- (auto-ask need not tell the user they are not in a group).
+---@param questID number?
+---@return boolean ok
+---@return string? err   set only when ok is false
 function ns.Ask(questID)
     if not questID then return false, "no quest" end
     askedQuest = questID

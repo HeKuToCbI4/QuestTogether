@@ -62,7 +62,7 @@ heard from" — **not** "no".
 
 ### Planned (not implemented)
 
-Specified in [`PLAN.md`](PLAN.md#7-ux-specification); none of this exists yet:
+Specified in [`docs/UX.md`](docs/UX.md#ux-specification); none of this exists yet:
 
 - **Quest log annotations** — every quest in your log, labelled with who still needs it.
 - **Available-quest lists** — all quests an NPC offers annotated at once.
@@ -78,7 +78,7 @@ Drop the addon folder into your client's `Interface/AddOns/` directory. The fold
 else, and fails silently when they differ.
 
 > **Note:** the exact install path for WoW Forever is unconfirmed — see
-> [Open Questions](PLAN.md#open-questions) (Q2). Reports indicate Forever reads the
+> [Open Questions](docs/MEASUREMENTS.md#open-questions) (Q2). Reports indicate Forever reads the
 > Mainline addon directory. Verify before publishing install instructions.
 
 Then `/reload`, and enable **Quest Together** in the AddOns list.
@@ -132,7 +132,7 @@ buried:
 - **Control: there is none yet.** v0.0.2 has no settings. The only way to stop
   answering is to disable the addon — peers then see no entry for you. Two
   independent toggles (answer queries / share quest log) are planned
-  ([`PLAN.md` §6](PLAN.md#6-data-model)) and tracked as an issue.
+  ([data model](docs/ARCHITECTURE.md#data-model)) and tracked as an issue.
 
 Nothing is transmitted to any third party, no server, no analytics.
 
@@ -172,7 +172,7 @@ API presence (`if C_ChatInfo and C_ChatInfo.SendAddonMessage then`), never on th
 version number.
 
 Full measurements and the still-open items are in
-[`PLAN.md`](PLAN.md#measurement--2026-09-20).
+[`docs/MEASUREMENTS.md`](docs/MEASUREMENTS.md#measurement--2026-09-20).
 
 Classic Era / Wrath / Cataclysm Classic are **not** currently targets. Quest IDs
 differ between those worlds, so raw data is not portable between them — though the
@@ -193,10 +193,18 @@ QuestTogether/
 ├── UI.lua               # the status popup panel
 ├── Core.lua             # bootstrap, events, slash dispatch
 ├── README.md
-├── PLAN.md              # design, protocol, milestones, risks, measurements
+├── CLAUDE.md            # rules of the road for AI agents (and new contributors)
+├── PLAN.md              # index of the design docs
 ├── CHANGELOG.md
-└── docs/
-    └── TESTING.md       # manual test checklists (incl. the two-client M0 gate)
+├── docs/
+│   ├── ARCHITECTURE.md  # premise, constraints C1-C7, decisions D1-D5, data model
+│   ├── PROTOCOL.md      # wire protocol: revision 2 (built), revision 3 (planned)
+│   ├── UX.md            # target presentation
+│   ├── ROADMAP.md       # milestones M0-M5, risks R1-R11, testing strategy
+│   ├── MEASUREMENTS.md  # live-client measurements, open questions Q1-Q7, API sheet
+│   └── TESTING.md       # manual test checklists (incl. the two-client M0 gate)
+└── tools/
+    └── linkcheck.py     # verifies markdown links and anchors
 ```
 
 ### Load order
@@ -235,12 +243,18 @@ before removing the file for release.
 
 | Document | Contents |
 |---|---|
-| [`PLAN.md`](PLAN.md) | Architecture, wire protocol (current and planned), milestones, risks, measurements |
+| [`PLAN.md`](PLAN.md) | Index of the design docs below |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Premise, constraints, decisions, data model, non-goals |
+| [`docs/PROTOCOL.md`](docs/PROTOCOL.md) | Wire protocol — revision 2 (implemented) and revision 3 (planned) |
+| [`docs/UX.md`](docs/UX.md) | Target presentation |
+| [`docs/ROADMAP.md`](docs/ROADMAP.md) | Milestones, risks, testing strategy |
+| [`docs/MEASUREMENTS.md`](docs/MEASUREMENTS.md) | Live-client measurements, open questions, API cheat sheet |
+| [`CLAUDE.md`](CLAUDE.md) | Working rules for AI agents and new contributors; how to run the checks |
 | [`docs/TESTING.md`](docs/TESTING.md) | Manual test checklists — solo smoke test and the two-client M0 gate |
 | [`CHANGELOG.md`](CHANGELOG.md) | Release history |
 
 Where the documents and the code disagree, **the code is authoritative** for current
-behaviour; `PLAN.md` marks each section as *implemented* or *planned*.
+behaviour; the design docs mark each section as *implemented* or *planned*.
 
 ---
 
@@ -255,5 +269,5 @@ on the beta that opened 2026-09-17:
 - [API GetBuildInfo — Warcraft Wiki](https://wowpedia.fandom.com/wiki/API_GetBuildInfo)
 
 These are secondary sources describing a beta client. Treat the API specifics as
-claims to verify in-game, not as documentation — `PLAN.md` tracks which ones are
-still open.
+claims to verify in-game, not as documentation — `docs/MEASUREMENTS.md` tracks
+which ones are still open.

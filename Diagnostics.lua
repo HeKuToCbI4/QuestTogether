@@ -9,7 +9,7 @@ It exists because Forever is a beta client whose API surface and event payloads 
 still moving, and guessing at those from documentation is how ships sink.
 
 The one-shot measurement probes were retired on 2026-09-21 once their answers were
-recorded in PLAN.md (API presence, the completion oracle, the GetInfo schema).
+recorded in docs/MEASUREMENTS.md (API presence, the oracle, the GetInfo schema).
 What remains probes the questions still open:
 
   * /qt events -- what arguments quest events actually carry (still unverified)
@@ -22,6 +22,7 @@ The rule the project has already been bitten by twice: measure, do not infer.
 ------------------------------------------------------------------------------]]
 
 local ADDON_NAME, ns = ...
+---@cast ns QT.Namespace
 
 ns.commands = ns.commands or {}
 

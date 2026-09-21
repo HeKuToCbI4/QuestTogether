@@ -1,7 +1,7 @@
 --[[----------------------------------------------------------------------------
 Peers -- who is in the group, and what we know about them.
 
-Peer state is SESSION-SCOPED by design (PLAN.md D2): a peer's completion state is
+Peer state is SESSION-SCOPED by design (docs/ARCHITECTURE.md D2): a peer's completion state is
 only trusted while they stay in the group. They may have completed quests since,
 so entries are dropped on roster change and re-established.
 
@@ -26,10 +26,15 @@ where they complete quests after answering.
 ------------------------------------------------------------------------------]]
 
 local ADDON_NAME, ns = ...
+---@cast ns QT.Namespace
 
 ns.peers = {}
 
 -- key is the peer's bare name; see ns.BaseName.
+---@param key string           bare name, from ns.BaseName
+---@param displayName string?  sender as it arrived
+---@param compatible boolean
+---@return QT.Peer
 function ns.MarkPeer(key, displayName, compatible)
     local p = ns.peers[key]
     if not p then
@@ -45,6 +50,10 @@ end
 -- The ONLY writer of an answer. Everything else only reads.
 -- status: 1 = completed, 2 = on it now, 0 = neither. Returns the peer so callers
 -- can report on it immediately.
+---@param key string
+---@param questID number
+---@param status QT.AnswerStatus
+---@return QT.Peer? peer   nil when the key was never marked
 function ns.RecordAnswer(key, questID, status)
     local p = ns.peers[key]
     if not p then return nil end
@@ -61,6 +70,9 @@ function ns.RecordAnswer(key, questID, status)
     return p
 end
 
+---@param peer QT.Peer
+---@param questID number
+---@return string
 function ns.DescribePeerState(peer, questID)
     if not peer.compatible then return "?  (incompatible addon version)" end
     local v = peer.answered[questID]

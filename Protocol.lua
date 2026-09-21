@@ -2,7 +2,7 @@
 Protocol -- the wire format and the transport.
 
 Knows nothing about quests beyond "here is a quest ID". It moves opaque payloads
-and enforces the rules; meaning lives elsewhere. (PLAN.md D4.)
+and enforces the rules; meaning lives elsewhere. (docs/ARCHITECTURE.md D4.)
 
 Wire format v2 -- ASCII, '|' delimited, first field is the protocol revision:
 
@@ -16,6 +16,7 @@ wrong in it as possible.
 ------------------------------------------------------------------------------]]
 
 local ADDON_NAME, ns = ...
+---@cast ns QT.Namespace
 
 ns.PREFIX       = "QTOG"
 ns.PROTOCOL     = 2
@@ -30,8 +31,10 @@ ns.REPLY_WINDOW = 3   -- seconds to wait for peers before calling them unknown
 
 local registered = false
 
+---@return boolean
 function ns.IsPrefixRegistered() return registered end
 
+---@return boolean registered
 function ns.RegisterPrefix()
     if registered then return true end
     if not ns.api.register then return false end
@@ -39,6 +42,10 @@ function ns.RegisterPrefix()
     return registered
 end
 
+---@param payload string
+---@param channel? string   defaults to ns.GroupChannel()
+---@return boolean ok
+---@return string? err    set only when ok is false
 function ns.Send(payload, channel)
     channel = channel or ns.GroupChannel()
     if not channel then return false, "not in a group" end
@@ -48,12 +55,18 @@ function ns.Send(payload, channel)
     return true
 end
 
+---@return boolean ok
+---@return string? err
 function ns.Announce()
     return ns.Send(ns.PROTOCOL .. "|H")
 end
 
 -- Inbound. Core calls this inside pcall: a malformed payload from any peer must
 -- never throw inside our own session.
+---@param prefix any    untrusted: every argument comes from another client
+---@param text any
+---@param channel any
+---@param sender any
 function ns.HandleAddonMessage(prefix, text, channel, sender)
     if prefix ~= ns.PREFIX then return end
     if type(text) ~= "string" or #text > 200 then return end
