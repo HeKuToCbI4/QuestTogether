@@ -23,6 +23,33 @@ same forward-reference trap that crashed v0.1.
 
 local ADDON_NAME, ns = ...
 
+-- LuaLS type declarations (comments only -- no runtime effect). The tri-state is
+-- spelled `boolean?` throughout: true / false / nil-meaning-UNKNOWN.
+
+---@alias QT.AnswerStatus
+---| 0 # not completed
+---| 1 # completed
+---| 2 # not completed, but in their quest log right now ("on it")
+
+---@class QT.Peer
+---@field name string                        display name as the sender arrived ("Name" or "Name-Realm")
+---@field compatible boolean                 their protocol revision equals ns.PROTOCOL
+---@field lastSeen number                    time() of their last message
+---@field answered table<number, boolean>    questID -> completed; ABSENT KEY == UNKNOWN, never false
+---@field onIt table<number, boolean>        questID -> true; only ever set alongside answered == false
+
+---@class QT.Namespace
+---@field api table<string, function?>       resolved client API; any entry may be nil
+---@field peers table<string, QT.Peer>       keyed by bare character name (see ns.BaseName)
+---@field commands table<string, fun(rest: string)>
+---@field onAnswer? fun(peer: QT.Peer?, questID: number, status: QT.AnswerStatus)
+---@field PREFIX string
+---@field PROTOCOL integer
+---@field REPLY_WINDOW number
+---@field tracing boolean
+
+---@cast ns QT.Namespace
+
 local C_ChatInfo = rawget(_G, "C_ChatInfo")
 local C_QuestLog = rawget(_G, "C_QuestLog")
 
@@ -57,10 +84,13 @@ ns.namespaces = {
 -- Primitives
 ------------------------------------------------------------------------------
 
+---@param msg any
 function ns.Print(msg)
     print("|cff33ff99Quest Together|r " .. tostring(msg))
 end
 
+---@param v any
+---@return "yes"|"NO"
 function ns.yn(v)
     return v and "yes" or "NO"
 end
@@ -68,6 +98,8 @@ end
 -- Wrap every value that might carry a secret. Under the secret-values system,
 -- arithmetic and comparison on a secret raises a Lua error, so anything coming
 -- from a quest or unit API is checked before we touch it.
+---@param v any
+---@return boolean
 function ns.IsSecret(v)
     local f = _G.issecretvalue
     if not f then return false end
@@ -76,6 +108,8 @@ function ns.IsSecret(v)
 end
 
 -- Never let a diagnostic itself throw.
+---@param v any
+---@return string
 function ns.SafeStr(v)
     if v == nil then return "nil" end
     if ns.IsSecret(v) then return "<secret>" end
@@ -85,11 +119,14 @@ end
 
 -- Addon-message senders arrive as "Name" or "Name-Realm"; key peers by the bare
 -- name so cross-realm and same-realm members compare consistently.
+---@param s any           sender as delivered by CHAT_MSG_ADDON
+---@return string? key    nil when s is not a string
 function ns.BaseName(s)
     if type(s) ~= "string" then return nil end
     return (s:match("^([^%-]+)")) or s
 end
 
+---@return "RAID"|"PARTY"|nil channel   nil when solo
 function ns.GroupChannel()
     if _G.IsInRaid and _G.IsInRaid() then return "RAID" end
     if _G.IsInGroup and _G.IsInGroup() then return "PARTY" end
@@ -105,7 +142,10 @@ end
 -- "not completed", the one mistake this addon exists to prevent.
 --
 -- Verified bidirectionally 2026-09-20 -- quest 92460 answered `false` before
--- turn-in and `true` after. See PLAN.md, "Fourth run".
+-- turn-in and `true` after. See docs/MEASUREMENTS.md, "Fourth run".
+---@param questID number
+---@return boolean? done   nil == UNKNOWN; never coerce to false
+---@return string? reason  set only when done is nil
 function ns.SafeIsDone(questID)
     if not ns.api.isDone then return nil, "no completion API" end
     local ok, res = pcall(ns.api.isDone, questID)
@@ -116,6 +156,7 @@ function ns.SafeIsDone(questID)
 end
 
 -- Quest ID of whatever the quest frame is currently showing, if anything.
+---@return number? questID   always > 0 when non-nil
 function ns.LocalQuestID()
     local f = _G.GetQuestID
     if not f then return nil end

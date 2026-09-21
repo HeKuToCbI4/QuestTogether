@@ -20,8 +20,9 @@ addon is absent from the panel rather than shown as "?", and an empty peer list
 reads "(not in a group)" even when grouped.
 
 Deliberately NOT here yet:
-  * eligibility / prerequisite status -- no client API for it (see PLAN.md); a
-    future dependency on a quest database (Grail) would be needed.
+  * eligibility / prerequisite status -- no client API for it (see
+    docs/ARCHITECTURE.md, "Non-goals"); a future dependency on a quest database
+    (Grail) would be needed.
   * anchoring into the quest frame's own layout -- we float beside it instead.
 
 Loaded AFTER Diagnostics so it can wrap ns.onAnswer (installed by Commands) and
@@ -32,6 +33,7 @@ the wraps silently capture nil.
 ------------------------------------------------------------------------------]]
 
 local ADDON_NAME, ns = ...
+---@cast ns QT.Namespace
 
 ns.commands = ns.commands or {}
 
@@ -120,7 +122,8 @@ end
 
 -- The quest frame's own show/hide is the most reliable "a quest is open" signal
 -- we have on this beta client. Hook it when the frame keeps its Mainline name
--- (PLAN Q5 is still open); /qt ui is the fallback when it does not.
+-- (docs/MEASUREMENTS.md, Q5, is still open); /qt ui is the fallback when it does
+-- not.
 if _G.QuestFrame then
     _G.QuestFrame:HookScript("OnShow", function() ShowPanel() end)
     _G.QuestFrame:HookScript("OnHide", function() panel:Hide() end)

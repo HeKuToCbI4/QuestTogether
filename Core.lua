@@ -8,10 +8,11 @@ Load order: Compat -> Peers -> Protocol -> Commands -> Diagnostics -> UI -> Core
 as listed in the .toc. Order only matters for definitions; modules reach each other
 through `ns` and must only CALL across module boundaries at runtime. A cross-module
 call during load is the same forward-reference trap that crashed v0.1 (see
-PLAN.md, "Third run").
+docs/MEASUREMENTS.md, "Third run").
 ------------------------------------------------------------------------------]]
 
 local ADDON_NAME, ns = ...
+---@cast ns QT.Namespace
 
 ------------------------------------------------------------------------------
 -- Slash dispatch
@@ -60,7 +61,7 @@ f:SetScript("OnEvent", function(_, event, arg1, arg2, arg3, arg4)
     elseif event == "PLAYER_ENTERING_WORLD" or event == "GROUP_ROSTER_UPDATE" then
         -- Re-announce on every roster change. State, not events: we do not try
         -- to track who joined when, we just make sure everyone eventually hears
-        -- us. (PLAN.md, "Sync state, not events".)
+        -- us. (docs/PROTOCOL.md, "Sync state, not events".)
         if ns.GroupChannel() then ns.Announce() end
     end
 end)

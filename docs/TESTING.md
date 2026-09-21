@@ -1,8 +1,8 @@
 # Manual testing
 
-There are no automated tests yet (see [`PLAN.md` §11](../PLAN.md#11-testing-strategy)).
+There are no automated tests yet (see [testing strategy](ROADMAP.md#testing-strategy)).
 These checklists are the test suite. Record results — including the date, client
-build and any surprising output — in [`PLAN.md` §12](../PLAN.md#12-open-questions).
+build and any surprising output — in [`MEASUREMENTS.md`](MEASUREMENTS.md#measurements-and-open-questions).
 
 Expected chat lines are prefixed with `Quest Together` in green; that prefix is
 omitted below.
@@ -50,7 +50,7 @@ quest `Q2` that B currently has **in their log, uncompleted**.
 | B8 | A opens a quest at an NPC | A's popup appears and, without typing anything, fills in B's line (auto-ask). | |
 | B9 | B: `/reload`. Then A: `/qt ask Q1` | B still answers after the reload. | |
 
-**Passing B2, B4, B5 and B7 closes the gate.** Tick the last M0 box in `PLAN.md` §8,
+**Passing B2, B4, B5 and B7 closes the gate.** Tick the last M0 box in [`ROADMAP.md`](ROADMAP.md#milestones),
 close Q4 if nothing looked throttled, and update R3.
 
 ### Observations to record even on a pass
