@@ -14,13 +14,18 @@ The fallbacks below are therefore dead code on this client. They are kept becaus
 the surface may still shift -- but this is a recorded measurement, not a hedge.
 
 Also home to the primitives every other module assumes: the secret-value guard,
-the safe formatter, Print, and the one peer-key function (ns.PeerKey). Peer
-identity lives here precisely because every module has to agree on it -- two
-key-building rules would silently split the registry in half.
+the safe formatter, Print, the one peer-key function (ns.PeerKey) -- and the two
+registries (answer listeners, help lines) through which the other modules announce
+themselves. Peer identity lives here precisely because every module has to agree on
+it -- two key-building rules would silently split the registry in half.
 
 Load-order note: modules communicate through `ns` and must only ever CALL each
 other at runtime, never during load. A cross-module call at load time is the
-same forward-reference trap that crashed v0.1.
+same forward-reference trap that crashed v0.1. Registering into the lists below
+is the one sanctioned exception: this file is first in the .toc, so the lists
+exist before anyone adds to them, and registering only appends a value -- it
+never runs another module's behaviour. That is what lets every OTHER file be
+reordered or deleted without breaking anything.
 ------------------------------------------------------------------------------]]
 
 local ADDON_NAME, ns = ...
@@ -40,6 +45,10 @@ local ADDON_NAME, ns = ...
 ---@field answered table<number, boolean>    questID -> completed; ABSENT KEY == UNKNOWN, never false
 ---@field onIt table<number, boolean>        questID -> true; only ever set alongside answered == false
 
+---@class QT.HelpLine
+---@field cmd string                         the command as typed, e.g. "/qt ping"
+---@field text string                        one short line of description
+---@field group string?                      optional heading; ungrouped lines print first
 ---@class QT.GroupMember
 ---@field key string                         peer key, from ns.PeerKey
 ---@field display string                     name to show the user
@@ -49,7 +58,8 @@ local ADDON_NAME, ns = ...
 ---@field api table<string, function?>       resolved client API; any entry may be nil
 ---@field peers table<string, QT.Peer>       keyed by normalised "Name-Realm" (see ns.PeerKey)
 ---@field commands table<string, fun(rest: string)>
----@field onAnswer? fun(peer: QT.Peer?, questID: number, status: QT.AnswerStatus)
+---@field answerListeners (fun(peer: QT.Peer?, questID: number, status: QT.AnswerStatus))[]
+---@field helpLines QT.HelpLine[]
 ---@field PREFIX string
 ---@field PROTOCOL integer
 ---@field REPLY_WINDOW number
@@ -71,25 +81,58 @@ ns.api = {
     logIdxForId = C_QuestLog and C_QuestLog.GetLogIndexForQuestID,
 }
 
--- Shared hooks. Declared HERE, in the first-loaded module, so that no later
--- module has to initialise them -- a module that assigns `ns.onAnswer = nil` at
--- load would clobber whoever set it first, making load order load-bearing.
+------------------------------------------------------------------------------
+-- Registries
 --
--- ns.onAnswer: set by Commands.lua, called by Protocol.lua when a peer answers.
-ns.onAnswer = nil
+-- Two lists any module may add itself to. They live HERE, in the first-loaded
+-- module, so that the list a module registers into always exists already.
+--
+-- They replace the old wrap chains (`ns.onAnswer`, `ns.commands.help`), where a
+-- file wrapped whatever the previous file had set. A wrap silently captured nil
+-- if the files were listed the other way round, so the .toc order quietly
+-- decided whether the addon worked. With registries, every file but this one can
+-- be moved or deleted freely; registering is a definition, not a call into
+-- another module's behaviour.
+------------------------------------------------------------------------------
 
--- Whole namespaces, so Diagnostics can probe a surface without this file
--- having to enumerate every member of it. Currently unused: the probes that read
--- it (/qt env) were retired 2026-09-21. Kept for the next surface to measure.
-ns.namespaces = {
-    C_ChatInfo   = C_ChatInfo,
-    C_QuestLog   = C_QuestLog,
-    C_GossipInfo = rawget(_G, "C_GossipInfo"),
-}
+-- Called by Protocol.lua when a peer answers, in registration order, each inside
+-- its own pcall: one broken listener must not stop the rest.
+ns.answerListeners = ns.answerListeners or {}
+
+---@param fn fun(peer: QT.Peer?, questID: number, status: QT.AnswerStatus)
+function ns.OnAnswer(fn)
+    if type(fn) ~= "function" then return end
+    ns.answerListeners[#ns.answerListeners + 1] = fn
+end
+
+-- /qt help is assembled from whatever modules are present. Each module registers
+-- the commands IT owns, so deleting a file takes its help lines with it and
+-- leaves the rest of the list intact.
+ns.helpLines = ns.helpLines or {}
+
+---@param cmd string      the command as typed, e.g. "/qt ping"
+---@param text string     one short line of description
+---@param group string?   optional heading; ungrouped lines print first
+function ns.AddHelp(cmd, text, group)
+    if type(cmd) ~= "string" or type(text) ~= "string" then return end
+    ns.helpLines[#ns.helpLines + 1] = { cmd = cmd, text = text, group = group }
+end
 
 ------------------------------------------------------------------------------
 -- Primitives
 ------------------------------------------------------------------------------
+
+-- The addon's version, read from the .toc rather than repeated in the source.
+-- Presence-guarded both ways, and nil when the client offers neither API -- the
+-- help header then simply has no version in it, which beats printing a wrong one.
+---@return string? version   nil when the client exposes no metadata API
+function ns.AddonVersion()
+    local f = (_G.C_AddOns and _G.C_AddOns.GetAddOnMetadata) or _G.GetAddOnMetadata
+    if not f then return nil end
+    local ok, v = pcall(f, ADDON_NAME, "Version")
+    if not ok or type(v) ~= "string" or v == "" then return nil end
+    return v
+end
 
 ---@param msg any
 function ns.Print(msg)

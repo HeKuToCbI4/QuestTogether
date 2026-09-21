@@ -144,13 +144,15 @@ one area cannot ripple into another.
 | `Compat.lua` | Client interface | API resolution, `IsSecret`, `SafeStr`, `SafeIsDone`, `LocalQuestID`, `GroupChannel` |
 | `Peers.lua` | Data layer | The `peers` registry and `RecordAnswer` — **home of the tri-state invariant** |
 | `Protocol.lua` | Transport layer | `PREFIX`, message grammar, `Send`, `HandleAddonMessage`, prefix registration |
-| `Commands.lua` | UI layer (text) | `ns.Ask`, `/qt ask`, `/qt ping`, `/qt status` |
-| `Diagnostics.lua` | — | Solo verification commands, and (for now) `/qt help`. **Almost deletable** — see below. |
-| `UI.lua` | UI layer (panel) | The status popup, quest-frame show/hide hook, auto-ask on `QUEST_DETAIL` |
+| `Query.lua` | UI layer (text) | `ns.Ask`, the pending asks keyed by quest ID, the live lines and the summary |
+| `Commands.lua` | UI layer (text) | `/qt ask`, `/qt ping`, `/qt status`, `/qt help` |
+| `Diagnostics.lua` | — | Solo verification commands. **Deletable** — see below. |
+| `UI.lua` | UI layer (panel) | The status popup, quest-frame show/hide hook, silent auto-ask on `QUEST_DETAIL` |
 | `Core.lua` | Wiring | Bootstrap, event frame, slash dispatch |
 
-Load order is `Compat → Peers → Protocol → Commands → Diagnostics → UI → Core`, as
-listed in the `.toc`.
+Load order is `Compat → Peers → Protocol → Query → Commands → Diagnostics → UI →
+Core`, as listed in the `.toc`. Only `Compat.lua` has to be first: it declares the
+registries (`ns.commands`, `ns.OnAnswer`, `ns.AddHelp`) the others add themselves to.
 
 The component diagram above is the **target**. Not yet built: the send queue,
 throttling and coalescing (`ns.Send` is a direct call), the `.log{}` peer dataset,
@@ -161,12 +163,10 @@ Two boundaries are deliberate and worth preserving as this grows:
 - **Transport knows nothing about quests** ([D4](#key-architectural-decisions)). It moves
   opaque payloads and enforces the rules; meaning lives above it.
 - **Diagnostics is disposable.** It owns its own event frame and registers into the
-  shared `ns.commands` table, so deleting the file removes all dev tooling and touches
-  nothing else. If `Core.lua` ever grows a reference to `ns.tracing`, that property is
+  shared `ns.commands` and `ns.helpLines` tables, so deleting the file removes all
+  dev tooling and touches nothing else — `/qt help` simply stops listing the two
+  probes. If `Core.lua` ever grows a reference to `ns.tracing`, that property is
   broken and the file becomes permanent.
-  **Currently violated in one place:** `/qt help` for *every* command is defined in
-  `Diagnostics.lua`, and `UI.lua` wraps it. Deleting the file today leaves a help
-  command that lists only `/qt ui`. Move the help text out first.
 
 **The split also retires a bug class.** v0.1 crashed because `SafeStr` called
 `IsSecret` before it was defined — `local function` does not hoist, so the name
@@ -175,11 +175,12 @@ only call across boundaries at runtime, so there is no cross-file definition-ord
 trap to fall into. The single rule that keeps this true: **never call across modules
 at load time.**
 
-**Known soft spot.** `UI.lua` *reads* `ns.onAnswer` and `ns.commands.help` at load
-time to wrap them. It does not call them, so the rule holds to the letter — but the
-wraps silently do nothing if `UI.lua` is ever listed before `Commands.lua` or
-`Diagnostics.lua`. The file order is load-bearing there until the wrap chains are
-replaced with registries.
+**Registries, not wrap chains.** Modules announce themselves by adding to lists that
+`Compat.lua` declares — `ns.OnAnswer(fn)` for "a peer answered", `ns.AddHelp(cmd,
+text)` for `/qt help`, `ns.commands` for the commands themselves. Nothing wraps
+anything, so no file needs another file to have loaded first, and a listener that
+throws cannot take the others down with it (`Protocol.lua` calls each in its own
+`pcall`).
 
 ### Key architectural decisions
 

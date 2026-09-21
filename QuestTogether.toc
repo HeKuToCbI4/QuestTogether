@@ -8,6 +8,7 @@
 Compat.lua
 Peers.lua
 Protocol.lua
+Query.lua
 Commands.lua
 Diagnostics.lua
 UI.lua

@@ -55,9 +55,11 @@ as "no".
 - **Status popup beside the quest frame.** Open a quest at an NPC: the popup shows
   your own completion state (live from the client) and one line per group member,
   taken from the roster so that nobody is silently missing.
-- **Auto-ask.** Opening a quest asks the group about it once per quest ID.
-- **Chat output.** Answers print live as they arrive; a summary follows after
-  3 seconds.
+- **Auto-ask.** Opening a quest asks the group about it, silently — the answers
+  appear in the popup, not in chat. Asked once per quest ID, and again after the
+  group roster changes, so a member who joined late is still asked.
+- **Chat output.** For `/qt` only: answers print live as they arrive, and a summary
+  follows after 3 seconds.
 - **"On it now".** A peer who has the quest in their log but has not completed it is
   reported separately from a plain "no".
 - **Version check.** Peers on a different protocol revision are marked incompatible
@@ -91,8 +93,8 @@ Then `/reload`, and enable **Quest Together** in the AddOns list.
 ## Usage
 
 Open a quest at an NPC and the status popup appears beside it — the group is
-asked automatically. `/qt` re-asks on demand, and `/qt ui` toggles the popup
-solo for testing.
+asked automatically, without printing anything to chat. `/qt` re-asks on demand
+and reports in chat, and `/qt ui` toggles the popup solo for testing.
 
 | Command | Effect |
 |---|---|
@@ -110,8 +112,9 @@ Solo verification tools — these run with one client and nobody else online:
 | `/qt events` | Toggle tracing of quest events and their arguments |
 | `/qt frames` | List the UI objects M4 would hook |
 
-Answers print live as they arrive, then a summary follows after 3 seconds. Peers
-that never answer stay `?` — never "no".
+For a `/qt` you typed, answers print live as they arrive, then a summary follows
+after 3 seconds; the automatic ask when you open a quest prints nothing at all.
+Peers that never answer stay `?` — never "no".
 
 ---
 
@@ -191,8 +194,9 @@ QuestTogether/
 ├── Compat.lua           # client API surface, secret guards, the completion oracle
 ├── Peers.lua            # peer registry; home of the tri-state invariant
 ├── Protocol.lua         # wire format and transport
-├── Commands.lua         # user-facing slash commands
-├── Diagnostics.lua      # solo verification tools + /qt help
+├── Query.lua            # asking the group about a quest, and reporting answers
+├── Commands.lua         # user-facing slash commands, incl. /qt help
+├── Diagnostics.lua      # solo verification tools (deletable before release)
 ├── UI.lua               # the status popup panel
 ├── Core.lua             # bootstrap, events, slash dispatch
 ├── README.md
@@ -212,33 +216,35 @@ QuestTogether/
 
 ### Load order
 
-`Compat → Peers → Protocol → Commands → Diagnostics → UI → Core`, as listed in the `.toc`.
+`Compat → Peers → Protocol → Query → Commands → Diagnostics → UI → Core`, as listed
+in the `.toc`.
 
 The rule: modules reach each other through `ns` and must only ever **call** across
 module boundaries at runtime. A cross-file call during load is the same
 forward-reference trap that crashed the first prototype.
 
-**Known exception:** `UI.lua` *reads* `ns.onAnswer` (set by `Commands.lua`) and
-`ns.commands.help` (set by `Diagnostics.lua`) at load time in order to wrap them.
-That makes `UI.lua`'s position after both of them load-bearing. Replacing the wrap
-chains with registries is tracked as an issue.
+Only `Compat.lua` has to be first: it declares the registries (`ns.commands`,
+`ns.answerListeners` via `ns.OnAnswer`, `ns.helpLines` via `ns.AddHelp`) that the
+other modules add themselves to at load. Every other file can be reordered, or
+deleted, without anything else noticing.
 
-### Why these seven files
+### Why these eight files
 
 | Module | Owns | Changes when |
 |---|---|---|
 | `Compat` | Every assumption about the client's API | The client's API changes |
 | `Peers` | What we know about group members | Cache policy changes |
 | `Protocol` | Wire format, send/receive | The protocol revision bumps |
-| `Commands` | Slash commands that do real work | Command UX changes |
-| `Diagnostics` | Local verification tools, and `/qt help` | A new surface needs measuring |
+| `Query` | `ns.Ask`, pending asks, the live lines and the summary | Asking or reporting changes |
+| `Commands` | Slash commands that do real work, and `/qt help` | Command UX changes |
+| `Diagnostics` | Local verification tools | A new surface needs measuring |
 | `UI` | The status popup panel | The panel's presentation changes |
 | `Core` | Bootstrap and event wiring | Wiring changes |
 
-**`Diagnostics.lua` is *almost* deletable.** No other module calls into it and it
-owns its own event frame — but it also defines `/qt help` for every command, so
-deleting it today leaves `/qt help` listing only `/qt ui`. Move the help text out
-before removing the file for release.
+**`Diagnostics.lua` is deletable.** No other module calls into it, it owns its own
+event frame, and its commands and help lines are registered rather than wired in.
+Delete the file and its `.toc` line and everything else — `/qt help` included —
+keeps working, minus the two probes.
 
 ---
 
