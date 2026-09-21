@@ -15,6 +15,10 @@ character over group-only addon messages. Status: v0.0.2 prototype.
 3. **Never call across modules at load time.** Files share the `ns` table. Defining
    `ns.X` at load is fine; *calling* another module's `ns.Y` at file scope is not —
    it makes `.toc` order load-bearing and fails at runtime, not at load.
+   The one exception: registering into the lists `Compat.lua` declares
+   (`ns.OnAnswer`, `ns.AddHelp`, `ns.commands`). `Compat.lua` is first in the
+   `.toc`, so those exist before anyone registers, and a registration appends a
+   value rather than running another module's behaviour.
 4. **Branch on API presence, never on client version.** This client reports
    `1.60.1` but has the modern `C_*` API and no legacy globals. All client API
    access goes through `Compat.lua` (`ns.api`, `ns.Safe*`).
@@ -43,9 +47,9 @@ See `docs/ROADMAP.md` and the checklist in `docs/TESTING.md` §B.
 | What was *measured* on the live client; open questions (Q\*) | `docs/MEASUREMENTS.md` |
 | Manual test checklists | `docs/TESTING.md` |
 
-Load order (`QuestTogether.toc`): `Compat → Peers → Protocol → Commands → Diagnostics
-→ UI → Core`. `UI.lua` wraps `ns.onAnswer` and `ns.commands.help` at load, so it must
-stay after `Commands` and `Diagnostics` (known wart, tracked as an issue).
+Load order (`QuestTogether.toc`): `Compat → Peers → Protocol → Query → Commands →
+Diagnostics → UI → Core`. Only `Compat` has to be first (it declares the
+registries); the rest may be reordered or deleted freely.
 
 The design docs describe a **target**. Sections are tagged *Implemented* / *Planned*.
 When docs and code disagree about current behaviour, the code wins — then fix the doc.

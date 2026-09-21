@@ -33,10 +33,23 @@ h.test("our own messages are ignored", function(env, ns)
     h.eq(#env.sent, 0, "we never answer ourselves")
 end)
 
-h.test("our own messages are ignored across realms too", function(env, ns)
+-- Identity is the full "Name-Realm" (ns.PeerKey). A character with our name on
+-- ANOTHER realm is a different player and must not be dropped as "self".
+h.test("a cross-realm namesake is a different peer, not us", function(_, ns)
     ns.HandleAddonMessage(ns.PREFIX, "2|Q|" .. QUEST, "PARTY", "Tester-Ravencrest")
-    h.eq(h.count(ns.peers), 0, "the bare name matched us")
-    h.eq(#env.sent, 0, "nothing was sent")
+    h.eq(h.count(ns.peers), 1, "the namesake was recorded as a peer")
+    h.ok(ns.peers["Tester-Ravencrest"], "keyed by the full name")
+end)
+
+-- With our own realm known, a sender carrying that realm IS us. The stub is set
+-- and cleared around the call, because the harness only restores what it installed.
+h.test("our own Name-Realm is still ignored when the realm is known", function(env, ns)
+    _G.GetNormalizedRealmName = function() return "Ravencrest" end
+    ns.HandleAddonMessage(ns.PREFIX, "2|Q|" .. QUEST, "PARTY", "Tester-Ravencrest")
+    local peers, sent = h.count(ns.peers), #env.sent
+    _G.GetNormalizedRealmName = nil
+    h.eq(peers, 0, "the full name matched us")
+    h.eq(sent, 0, "nothing was sent")
 end)
 
 h.test("a sender we cannot read is ignored", function(env, ns)

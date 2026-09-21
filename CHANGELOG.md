@@ -4,7 +4,43 @@ Version numbers follow the `## Version` field of `QuestTogether.toc`.
 
 ## Unreleased
 
+### Changed
+- Auto-ask (opening a quest) is now silent: the popup shows the answers, so chat no
+  longer repeats them with an "Asking your group…" line, a line per answer and a
+  summary three seconds later. `/qt` and `/qt ask <id>` still report in chat.
+- `/qt help` is built from what each module registers for its own commands, and its
+  version header is read from the `.toc` instead of being hard-coded.
+
 ### Fixed
+- Every member of your group is now listed, whether or not they run Quest Together.
+  The popup and the `/qt` summary are driven by the group roster instead of "peers we
+  have heard from", so a member without the addon reads `?  (no addon heard from)`
+  rather than being silently absent. Grouped-but-nobody-has-it now says "None of your
+  group has Quest Together." instead of the false "(not in a group)". When the roster
+  cannot be read at all, the old list is shown — an unreadable roster is unknown, not
+  empty, and nothing is ever invented as a "no".
+- Peers are identified by their full `Name-Realm` instead of the bare character name.
+  Two group members with the same name on different realms no longer share one entry
+  (which could show one member's answer as the other's), and a cross-realm character
+  with your own name is no longer ignored as "you". The key is built in one place
+  (`ns.PeerKey`) and used by the registry, the roster walk and pruning alike. If the
+  client cannot report the realm, keys fall back to the bare name as before.
+- A group member who joins after a quest was opened is asked about it: the auto-ask
+  dedupe is cleared on every roster change, instead of remembering one quest ID
+  forever. Previously the newcomer stayed `?` until someone typed `/qt`.
+- Asking about several quests in quick succession no longer prints stale summaries
+  or swallows live answer lines: asks are tracked per quest ID, with one reply timer
+  each, instead of a single "current ask".
+- Presence announcements (`H`) are debounced: `GROUP_ROSTER_UPDATE` fires far more
+  often than people join or leave, and every one of them used to send a message.
+  A burst now costs one announcement (trailing edge, ~3 s window). `/qt ping` is
+  still immediate.
+- A presence announcement is now answered, after a short random delay, by every
+  group member who has been quiet for the last ten seconds. A client whose peer list
+  is empty — after a `/reload`, say — therefore fills `/qt status` and the popup back
+  in within a few seconds, with nobody typing anything. Answering makes us not quiet,
+  so clients cannot ping-pong announcements at each other. The wire format is
+  unchanged.
 - Quest IDs from another client are validated before use: `0`, negatives, fractions,
   `inf`/`NaN` and values above `2^31` are ignored instead of reaching the completion
   oracle or the peer cache — on inbound `Q`/`A` and on `/qt ask` alike. Zero was the
@@ -28,6 +64,16 @@ Version numbers follow the `## Version` field of `QuestTogether.toc`.
 - Stale source comments corrected (load order, auto-ask, retired probes).
 - PLAN.md split by concern into `docs/ARCHITECTURE.md`, `PROTOCOL.md`, `UX.md`,
   `ROADMAP.md` and `MEASUREMENTS.md`; PLAN.md is now the index.
+
+### Internal
+- Load-time wrap chains replaced with registries declared in `Compat.lua`:
+  `ns.OnAnswer(fn)` for answer listeners (each called inside its own `pcall`) and
+  `ns.AddHelp(cmd, text)` for help lines. No file but `Compat.lua` needs a
+  particular position in the `.toc` any more.
+- `Diagnostics.lua` is now genuinely deletable — `/qt help` moved to `Commands.lua`,
+  and the two probes register their own help lines.
+- New `Query.lua` owns `ns.Ask` and the pending asks; the unused `ns.namespaces`
+  table was removed.
 
 ### Tooling
 - Offline test suite in `tests/`, run with `lua5.1 tests/run.lua` and in CI. It fakes

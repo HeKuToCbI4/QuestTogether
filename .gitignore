@@ -16,3 +16,6 @@ __pycache__/
 
 # Claude Code per-user settings
 .claude/settings.local.json
+
+# Claude Code agent worktrees
+.claude/worktrees/
