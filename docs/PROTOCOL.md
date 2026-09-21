@@ -26,7 +26,7 @@ first two-client test has as little in it to go wrong as possible.
 
 | Message | Direction | Meaning |
 |---|---|---|
-| `2\|H` | broadcast | Presence announcement. Sent on `PLAYER_ENTERING_WORLD` and on every `GROUP_ROSTER_UPDATE` while grouped, and by `/qt ping`. **Not replied to.** |
+| `2\|H` | broadcast | Presence announcement. Sent on `PLAYER_ENTERING_WORLD` and on roster change while grouped — **debounced**, see below — and immediately by `/qt ping`. **Replied to with an `H` of our own, but only by a client that has itself been quiet.** |
 | `2\|Q\|<questID>` | broadcast | "Have you completed this quest?" One quest per message. |
 | `2\|A\|<questID>\|<status>` | broadcast | Answer. `status`: `0` = not completed, `1` = completed, `2` = not completed but in my log right now ("on it"). |
 
@@ -54,9 +54,26 @@ Behaviour that is part of the contract:
   change, anyone no longer in the group is dropped (`ns.PrunePeers`), so a cached
   answer cannot outlive the membership it came from. If the roster cannot be read at
   all, nobody is dropped — unknown is never "no", applied to the roster too.
+- **`H` is debounced, trailing edge** (`ns.AnnounceSoon`, window `ns.ANNOUNCE_DEBOUNCE`
+  = 3 s). `GROUP_ROSTER_UPDATE` fires far more often than people join or leave — role,
+  online and zone changes all raise it — so the first event opens a window, every event
+  inside it is absorbed, and one `H` goes out when the window closes. `/qt ping` is
+  manual and bypasses the window.
+- **An `H` is answered by whoever has been quiet.** "Quiet" means we have not announced
+  in the last `ns.ANNOUNCE_QUIET` = 10 s. This is what gives a client with an empty peer
+  list — after a `/reload`, say — its peers back: it announces on entering the world,
+  every quiet member answers, and it hears them, with nobody typing anything. The reply
+  waits a random 0.5–2 s (so N clients do not answer in the same frame) and then goes
+  through the same debounce, so several answers from one client still cost one message.
+  **It cannot loop**, because answering is itself an announcement: having replied we are
+  no longer quiet, so the reply to our reply is ignored and a chain is at most one round.
+  (The quiet window must stay comfortably above the debounce plus the jitter, or a late
+  answer could restart the chain.) Incompatible-revision peers are not answered.
+  Receivers do nothing new with an `H`, so this is not a wire-format change and the
+  revision stays at 2.
 
-Not in revision 2: batching, `seq` correlation, throttling, coalescing, quest-log
-sync, and any reply to `H`.
+Not in revision 2: batching, `seq` correlation, quest-log sync, and a general outbound
+send queue — only `H` is rate-limited.
 
 ### Revision 3 — the batched protocol — *Planned*
 

@@ -40,12 +40,18 @@ local ADDON_NAME, ns = ...
 ns.peers = {}
 
 -- key is the peer's full normalised "Name-Realm"; see ns.PeerKey.
+--
+-- The second return value says whether this call CREATED the entry. Protocol uses
+-- it as its fallback rule for answering a presence announcement on a client with
+-- no usable clock, where it cannot measure how long it has been quiet.
 ---@param key string           peer key, from ns.PeerKey
 ---@param displayName string?  name to show the user, from ns.PeerKey
 ---@param compatible boolean
 ---@return QT.Peer
+---@return boolean isNew   true only when this call created the entry
 function ns.MarkPeer(key, displayName, compatible)
     local p = ns.peers[key]
+    local isNew = (p == nil)
     if not p then
         p = { name = displayName or key, answered = {}, onIt = {} }
         ns.peers[key] = p
@@ -53,7 +59,7 @@ function ns.MarkPeer(key, displayName, compatible)
     end
     p.compatible = compatible
     p.lastSeen   = _G.time and _G.time() or 0
-    return p
+    return p, isNew
 end
 
 -- Drop every peer who is no longer in the group. This enforces D2: an answer is

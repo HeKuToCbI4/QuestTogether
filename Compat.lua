@@ -63,6 +63,8 @@ local ADDON_NAME, ns = ...
 ---@field PREFIX string
 ---@field PROTOCOL integer
 ---@field REPLY_WINDOW number
+---@field ANNOUNCE_DEBOUNCE number
+---@field ANNOUNCE_QUIET number
 ---@field tracing boolean
 
 ---@cast ns QT.Namespace
@@ -165,6 +167,20 @@ function ns.SafeStr(v)
     if ns.IsSecret(v) then return "<secret>" end
     local ok, s = pcall(tostring, v)
     return ok and s or "<unprintable>"
+end
+
+-- Seconds, for rate limiting. GetTime is the client's frame clock (fractional
+-- seconds since login); time() is the wall clock in whole seconds and is only a
+-- fallback. Both are read defensively and through _G: a rate limit must never be
+-- the thing that throws, and a client without either simply gets 0, which makes
+-- every window look expired rather than blocking sends forever.
+---@return number seconds   0 when the client exposes no clock at all
+function ns.Now()
+    local f = _G.GetTime or _G.time
+    if not f then return 0 end
+    local ok, v = pcall(f)
+    if not ok or type(v) ~= "number" then return 0 end
+    return v
 end
 
 ------------------------------------------------------------------------------

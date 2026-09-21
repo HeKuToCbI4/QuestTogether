@@ -131,8 +131,9 @@ buried:
   addon channel. Replies are broadcast to the whole group, not only to the asker.
   Messages are never sent to a public channel and never leave your group.
 - **When:**
-  - A presence announcement is sent **automatically** when you enter the world and
-    on every group roster change.
+  - A presence announcement is sent **automatically** when you enter the world, on
+    group roster changes, and in reply to another member's announcement if you have
+    not sent one recently. Bursts are coalesced into one message every few seconds.
   - A completion answer is sent **automatically** whenever any group member asks
     (their `/qt`, or them simply opening a quest). You are not prompted.
 - **Control: there is none yet.** v0.0.2 has no settings. The only way to stop

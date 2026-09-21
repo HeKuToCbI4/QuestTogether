@@ -31,6 +31,16 @@ Version numbers follow the `## Version` field of `QuestTogether.toc`.
 - Asking about several quests in quick succession no longer prints stale summaries
   or swallows live answer lines: asks are tracked per quest ID, with one reply timer
   each, instead of a single "current ask".
+- Presence announcements (`H`) are debounced: `GROUP_ROSTER_UPDATE` fires far more
+  often than people join or leave, and every one of them used to send a message.
+  A burst now costs one announcement (trailing edge, ~3 s window). `/qt ping` is
+  still immediate.
+- A presence announcement is now answered, after a short random delay, by every
+  group member who has been quiet for the last ten seconds. A client whose peer list
+  is empty — after a `/reload`, say — therefore fills `/qt status` and the popup back
+  in within a few seconds, with nobody typing anything. Answering makes us not quiet,
+  so clients cannot ping-pong announcements at each other. The wire format is
+  unchanged.
 - Quest IDs from another client are validated before use: `0`, negatives, fractions,
   `inf`/`NaN` and values above `2^31` are ignored instead of reaching the completion
   oracle or the peer cache — on inbound `Q`/`A` and on `/qt ask` alike. Zero was the
