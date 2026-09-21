@@ -78,13 +78,16 @@ Specified in [`docs/UX.md`](docs/UX.md#ux-specification); none of this exists ye
 
 ## Install
 
-Drop the addon folder into your client's `Interface/AddOns/` directory. The folder
-**must** be named `QuestTogether` — the client loads `<FolderName>.toc` and nothing
-else, and fails silently when they differ.
+Copy `QuestTogether.toc` and the `.lua` files it lists into
 
-> **Note:** the exact install path for WoW Forever is unconfirmed — see
-> [Open Questions](docs/MEASUREMENTS.md#open-questions) (Q2). Reports indicate Forever reads the
-> Mainline addon directory. Verify before publishing install instructions.
+```
+<World of Warcraft>\_classic_beta_\Interface\AddOns\QuestTogether\
+```
+
+The folder **must** be named `QuestTogether` — the client loads `<FolderName>.toc`
+and nothing else, and fails silently when they differ. The path was confirmed on the
+live beta client on 2026-09-21 ([Q2](docs/MEASUREMENTS.md#open-questions)); the
+`_classic_beta_` part will change when the game leaves beta.
 
 Then `/reload`, and enable **Quest Together** in the AddOns list.
 
@@ -113,6 +116,7 @@ Solo verification tools — these run with one client and nobody else online:
 | `/qt frames` | List the UI objects M4 would hook |
 | `/qt channel` | Probe instance-group detection and the channel messages would use |
 | `/qt sendtest` | Print what `SendAddonMessage` returns here (run solo and grouped) |
+| `/qt realm` | Print what the client reports as your name and realm |
 
 For a `/qt` you typed, answers print live as they arrive, then a summary follows
 after 3 seconds; the automatic ask when you open a quest prints nothing at all.

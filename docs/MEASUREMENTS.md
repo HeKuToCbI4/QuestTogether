@@ -130,6 +130,35 @@ removed from `Diagnostics.lua`. `/qt events` stays (event payloads are still
 unverified) and `/qt frames` stays (for M4). Re-add a probe only when a new
 surface needs measuring.
 
+### Fifth run — first install into the game folder (2026-09-21)
+
+Build `fd7e9ac` was copied into
+`<WoW>\_classic_beta_\Interface\AddOns\QuestTogether\` and loaded after `/reload`.
+Solo, on the same client (1.60.1). Three results:
+
+| Probe | Result |
+|---|---|
+| Addon directory | **`_classic_beta_\Interface\AddOns\`** — the addon loaded from there. Closes [Q2](#open-questions). |
+| `LE_PARTY_CATEGORY_INSTANCE` | **present, value `2`** |
+| `Enum.PartyCategory.Instance` | **absent** |
+| `IsInGroup(2)`, `IsInGroup()`, `IsInRaid()` while solo | `false`, `false`, `false` — the argument form is accepted |
+| `ns.GroupChannel()` while solo | `nil` |
+| `Enum.SendAddonMessageResult` | **present**; it contains `NotInGroup = 5` |
+| `SendAddonMessage(…, "PARTY")` while solo | returned **one value: the number `5`** (`NotInGroup`) |
+| `/dump GetNormalizedRealmName()` | printed **nothing at all** — not even an empty result |
+
+What follows from them:
+
+- **`SendAddonMessage` returns a numeric result code here, not a boolean.** A refused
+  send is a non-zero number, which is exactly what `ns.Send` already treats as a
+  failure — so solo `/qt ask` correctly reads "Cannot ask". The *success* value is
+  still unobserved (expected `0`); it needs a grouped `/qt sendtest`.
+- **The instance-group branch is wired to a constant that exists.** Whether
+  `IsInGroup(2)` turns `true` inside an LFG group is still unobserved.
+- **`/dump` tells us nothing on this client.** Silence is not a `nil`: the command
+  itself may be missing. So `GetNormalizedRealmName` is *still unmeasured*.
+  `/qt realm` replaces it as the instrument.
+
 ### Still unverified
 
 **1. Event payloads.** `QUEST_ACCEPTED` is believed to pass the quest ID as `arg1` —
@@ -137,9 +166,10 @@ inferred from a crash's local state rather than observed cleanly. `/qt events` t
 the real arguments. Cheap to settle; do it before v0.2 relies on it.
 
 **2. Instance (LFG) groups.** `ns.GroupChannel` now returns `"INSTANCE_CHAT"` when
-`IsInGroup(<instance category>)` is true, but **neither the category constant nor the
-argument form has been seen on this client** — the lookup is guarded, so a miss simply
-leaves the old `"RAID"` / `"PARTY"` behaviour in place. `/qt channel` prints whether
+`IsInGroup(<instance category>)` is true. **Half measured** (fifth run): the constant
+`LE_PARTY_CATEGORY_INSTANCE` exists (`2`) and `IsInGroup(2)` is accepted, returning
+`false` solo. Still unobserved: that it returns `true` inside an instance group. The
+lookup stays guarded, so a miss simply leaves the old `"RAID"` / `"PARTY"` behaviour. `/qt channel` prints whether
 `LE_PARTY_CATEGORY_INSTANCE` (or `Enum.PartyCategory.Instance`) exists and its value,
 what `IsInGroup(<category>)`, `IsInGroup()` and `IsInRaid()` return, and the channel
 that would be used. Run it **three times** — solo, in a normal party, and inside an
@@ -151,9 +181,10 @@ relying on the branch.
 **3. What `SendAddonMessage` returns here.** The call's *result* was ignored until
 now — "it did not throw" was read as "it was sent". Older clients return a boolean;
 newer ones return an `Enum.SendAddonMessageResult` code where `0` is success and
-non-zero means throttled, invalid channel, not in a group, and so on. **Which of the
-two this client does is unmeasured**, and `Enum.SendAddonMessageResult` may not exist
-at all.
+non-zero means throttled, invalid channel, not in a group, and so on. **Measured
+solo** (fifth run): this client returns the numeric code — `5` = `NotInGroup` — and
+`Enum.SendAddonMessageResult` exists. The grouped and the spam runs below are still
+owed.
 
 `/qt sendtest` measures it: it calls the raw API with a presence payload and prints
 every return value, its type, and the count of values returned. Run it three ways and
@@ -161,7 +192,7 @@ record all three:
 
 | Run | What to record |
 |---|---|
-| Solo | The result of a send that *cannot* have gone out — the failure shape. |
+| Solo | **Done: `5` (`NotInGroup`), one value, type number.** |
 | Grouped | The result of a send that *did* go out — the success shape. |
 | Grouped, ~10 times in a row | Whether a result changes under spam — a throttle. |
 
@@ -182,12 +213,12 @@ rules, and cross-client quest queries all remain open.
 | # | Question | Status | Resolution |
 |---|---|---|---|
 | Q1 | Correct `## Interface` value? | **Closed** | `16001`. Version `1.60.1` packs as major/minor/patch → `16001`. There was never a conflict; the version string simply does not describe the API generation. |
-| Q2 | Which directory does Forever load addons from? | Open | The addon loaded, so the folder in use is correct — record which one that was before writing install instructions. |
+| Q2 | Which directory does Forever load addons from? | **Closed** | `<WoW>\_classic_beta_\Interface\AddOns\`. Measured 2026-09-21: a fresh copy placed there loaded after `/reload` (fifth run). |
 | Q3 | Does a native party-quest-progress API exist? | **Closed — negative** | `GetQuestPartyProgress`, `QuestHasPartyProgress` and `GetQuestLogPartyMembers` are all absent. No native support, so nothing is duplicated. |
 | Q4 | Are addon messages rate-limited differently here? | Open | **The remaining gate.** Needs two grouped clients. `/qt sendtest`, run repeatedly while grouped, is the instrument: a throttle should show up as a changed return value (see "Still unverified" item 2). |
 | Q5 | Do quest frame objects keep Mainline names and structure? | Open | M4 |
 | Q6 | Does the default quest log already show party progress? | **Effectively closed** | No backing API exists ([Q3](#open-questions)), and UI cannot show what no API provides. Confirm visually while grouped. |
-| Q7 | Is `name-realm` a stable peer key? | Open — narrowed | The code now keys by full normalised `Name-Realm` (`ns.PeerKey`), instead of the bare name that made two realms collide. Two things are still **unmeasured** on this client: whether `GetNormalizedRealmName` exists (the code falls back to a bare key if not), and what realm suffix `CHAT_MSG_ADDON` actually puts on `sender` for a same-realm and a cross-realm peer. Record both in the two-client test ([TESTING.md §B](TESTING.md#b-two-client-round-trip--the-m0-gate), "Observations"). |
+| Q7 | Is `name-realm` a stable peer key? | Open — narrowed | The code now keys by full normalised `Name-Realm` (`ns.PeerKey`), instead of the bare name that made two realms collide. Two things are still **unmeasured** on this client: whether `GetNormalizedRealmName` exists (the code falls back to a bare key if not; `/dump` printed nothing, so `/qt realm` is the instrument — fifth run), and what realm suffix `CHAT_MSG_ADDON` actually puts on `sender` for a same-realm and a cross-realm peer. Record both in the two-client test ([TESTING.md §B](TESTING.md#b-two-client-round-trip--the-m0-gate), "Observations"). |
 
 ---
 

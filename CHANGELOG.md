@@ -4,6 +4,14 @@ Version numbers follow the `## Version` field of `QuestTogether.toc`.
 
 ## Unreleased
 
+### Measured on the live client (2026-09-21)
+- The addon loads from `_classic_beta_\Interface\AddOns\` — install instructions in the
+  README are now definite (Q2 closed).
+- `SendAddonMessage` returns a numeric result code here (`5` = `NotInGroup` when solo),
+  which `ns.Send` already reads as a failure. `LE_PARTY_CATEGORY_INSTANCE` exists (`2`).
+- New probe `/qt realm`: `/dump` prints nothing on this client, so the realm APIs that
+  peer keys depend on are measured by our own command instead.
+
 ### Changed
 - Auto-ask (opening a quest) is now silent: the popup shows the answers, so chat no
   longer repeats them with an "Asking your group…" line, a line per answer and a
