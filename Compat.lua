@@ -386,6 +386,18 @@ function ns.SafeIsDone(questID)
     return res
 end
 
+-- LOCAL PLAYER ONLY: is this quest in my log right now? Same tri-state as
+-- ns.SafeIsDone -- nil means the client could not say, never "no".
+---@param questID number
+---@return boolean? inLog   nil == UNKNOWN
+function ns.SafeInLog(questID)
+    local f = ns.api.logIdxForId
+    if not f then return nil end
+    local ok, idx = pcall(f, questID)
+    if not ok or ns.IsSecret(idx) then return nil end
+    return idx ~= nil and idx ~= false and idx ~= 0
+end
+
 -- Quest ID of whatever the quest frame is currently showing, if anything.
 ---@return number? questID   always > 0 when non-nil
 function ns.LocalQuestID()
