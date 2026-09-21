@@ -76,8 +76,13 @@ Version numbers follow the `## Version` field of `QuestTogether.toc`.
   table was removed.
 
 ### Tooling
+- Offline test suite in `tests/`, run with `lua5.1 tests/run.lua` and in CI. It fakes
+  the client, loads the real modules in `.toc` order and covers the wire format, the
+  tri-state invariant, the answering rules and hostile input. Stock Lua only — no
+  luarocks, no busted. To make it possible, the receive path was split into a pure
+  `ns.ParseMessage` and a thin dispatcher; behaviour is unchanged.
 - `CLAUDE.md`, `.luacheckrc`, `.luarc.json`, `.gitignore`, `tools/linkcheck.py` and a
-  GitHub Actions workflow running luacheck and the link check.
+  GitHub Actions workflow running luacheck, the test suite and the link check.
 - LuaLS type annotations on the public `ns` API (comments only).
 
 ## 0.0.2

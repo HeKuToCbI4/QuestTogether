@@ -15,6 +15,15 @@ jobs:
       - uses: actions/checkout@v4
       - uses: lunarmodules/luacheck@v1
 
+  tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Lua 5.1 is the dialect the client runs, so it is the dialect the suite
+      # is verified against. tests/run.lua needs nothing else -- no luarocks.
+      - run: sudo apt-get update && sudo apt-get install -y lua5.1
+      - run: lua5.1 tests/run.lua
+
   docs-links:
     runs-on: ubuntu-latest
     steps:
