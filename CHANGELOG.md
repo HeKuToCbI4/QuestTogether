@@ -5,6 +5,19 @@ Version numbers follow the `## Version` field of `QuestTogether.toc`.
 ## Unreleased
 
 ### Fixed
+- Every member of your group is now listed, whether or not they run Quest Together.
+  The popup and the `/qt` summary are driven by the group roster instead of "peers we
+  have heard from", so a member without the addon reads `?  (no addon heard from)`
+  rather than being silently absent. Grouped-but-nobody-has-it now says "None of your
+  group has Quest Together." instead of the false "(not in a group)". When the roster
+  cannot be read at all, the old list is shown — an unreadable roster is unknown, not
+  empty, and nothing is ever invented as a "no".
+- Peers are identified by their full `Name-Realm` instead of the bare character name.
+  Two group members with the same name on different realms no longer share one entry
+  (which could show one member's answer as the other's), and a cross-realm character
+  with your own name is no longer ignored as "you". The key is built in one place
+  (`ns.PeerKey`) and used by the registry, the roster walk and pruning alike. If the
+  client cannot report the realm, keys fall back to the bare name as before.
 - Quest IDs from another client are validated before use: `0`, negatives, fractions,
   `inf`/`NaN` and values above `2^31` are ignored instead of reaching the completion
   oracle or the peer cache — on inbound `Q`/`A` and on `/qt ask` alike. Zero was the
