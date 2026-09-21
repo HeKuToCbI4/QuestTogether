@@ -11,9 +11,10 @@ is useful: one Frame, one FontString, no layout, no skinning, no dragging.
 It renders the local player from the completion oracle (authoritative, live) and
 every known peer from the Peers registry (tri-state: yes / no / unknown). Rendering
 never asks; the one place this file does ask is the auto-ask on QUEST_DETAIL below,
-which goes through ns.Ask exactly as /qt does. Until a peer answers they show "?"
-and stay "?" -- never flipping to "no" (the one mistake this addon exists to
-prevent).
+which goes through ns.Ask exactly as /qt does -- but silently, because this panel
+is already showing what chat would otherwise repeat. Until a peer answers they
+show "?" and stay "?" -- never flipping to "no" (the one mistake this addon
+exists to prevent).
 
 Known gap: only peers we have HEARD FROM are listed. A group member without the
 addon is absent from the panel rather than shown as "?", and an empty peer list
@@ -25,11 +26,9 @@ Deliberately NOT here yet:
     (Grail) would be needed.
   * anchoring into the quest frame's own layout -- we float beside it instead.
 
-Loaded AFTER Diagnostics so it can wrap ns.onAnswer (installed by Commands) and
-extend ns.commands.help (installed by Diagnostics). Both wraps only READ at load
-time and CALL at runtime, so the cross-module rule holds -- but the read makes this
-file's position in the .toc load-bearing: listed before Commands or Diagnostics,
-the wraps silently capture nil.
+This file's position in the .toc does not matter. It registers an answer listener
+and a help line into the registries Compat.lua declares, rather than wrapping
+whatever Commands and Diagnostics happened to have set before it.
 ------------------------------------------------------------------------------]]
 
 local ADDON_NAME, ns = ...
@@ -130,9 +129,14 @@ if _G.QuestFrame then
 end
 
 -- Auto-ask: opening a quest asks the group about it, so the panel populates
--- without a manual /qt. Deduped by quest ID so a re-fired QUEST_DETAIL for the
--- same quest does not spam the group; a different quest asks again. Solo stays
--- quiet (no group to ask).
+-- without a manual /qt. Silent -- the answers land in the panel in front of the
+-- user, and printing them as well meant a burst of chat for every quest opened.
+--
+-- Deduped by quest ID so a re-fired QUEST_DETAIL for the same quest does not
+-- spam the group; a different quest asks again. The dedupe is cleared on every
+-- roster change (below): someone who joined after the last ask has never been
+-- asked, and would otherwise stay "?" for as long as that quest stayed open.
+-- Solo stays quiet (no group to ask).
 local lastAutoAsk = nil
 
 local function OnQuestOpen()
@@ -140,7 +144,7 @@ local function OnQuestOpen()
     local qid = ns.LocalQuestID()
     if qid and qid ~= lastAutoAsk and ns.GroupChannel() and ns.Ask then
         lastAutoAsk = qid
-        ns.Ask(qid)
+        ns.Ask(qid, true)
     end
 end
 
@@ -159,27 +163,24 @@ ev:SetScript("OnEvent", function(_, event)
         else
             OnQuestOpen()
         end
-    elseif event == "GROUP_ROSTER_UPDATE" and panel:IsShown() then
-        Update()
+    elseif event == "GROUP_ROSTER_UPDATE" then
+        -- The group changed, so the last auto-ask no longer speaks for it: a
+        -- member who joined since has never been asked anything.
+        lastAutoAsk = nil
+        if panel:IsShown() then Update() end
     end
 end)
 
 ------------------------------------------------------------------------------
--- Refresh on answers, and teach help about /qt ui
+-- Registrations: repaint on answers, and the /qt ui help line
 ------------------------------------------------------------------------------
 
--- ns.onAnswer is installed by Commands.lua. Wrap, do not replace, so the live
--- chat print keeps working and the panel just repaints alongside it.
-local prevAnswer = ns.onAnswer
-ns.onAnswer = function(peer, questID)
-    if prevAnswer then prevAnswer(peer, questID) end
+-- One listener among however many are registered: the panel repaints, and
+-- whatever else cares about the answer is none of this file's business.
+ns.OnAnswer(function()
     if panel:IsShown() then Update() end
-end
+end)
 
-local prevHelp = ns.commands.help
-ns.commands.help = function()
-    if prevHelp then prevHelp() end
-    ns.Print("  /qt ui          toggle the status panel")
-end
+ns.AddHelp("/qt ui", "toggle the status panel")
 
 panel:Hide()

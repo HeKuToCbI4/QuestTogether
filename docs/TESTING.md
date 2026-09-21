@@ -16,12 +16,12 @@ Run after every change, before anything else.
 | # | Step | Expected |
 |---|---|---|
 | A1 | `/reload`, then check the AddOns list | **Quest Together** is listed and enabled. No Lua error on load. |
-| A2 | `/qt help` | The command list, ending with the `/qt ui` line. |
+| A2 | `/qt help` | Header `v0.0.2 -- commands:` (the version comes from the `.toc`), then `/qt`, `/qt ask <id>`, `/qt ping`, `/qt status`, `/qt help`, `/qt ui`, then `-- still-open probes --` with `/qt events` and `/qt frames`. |
 | A3 | `/qt ui` | Popup appears: `No quest open.` `/qt ui` again hides it. |
 | A4 | `/qt` with no quest open | `No quest selected. Open a quest at an NPC, or use /qt ask <questID>.` |
 | A5 | `/qt ask 92460` while solo | `Cannot ask: not in a group` |
 | A6 | `/qt status` | `No peers heard from yet. Try /qt ping while grouped.` |
-| A7 | Open any quest at an NPC | Popup appears beside the quest frame with `Quest <id>` and a `You: …` line. Nothing is printed to chat (solo stays quiet). Closing the quest frame hides the popup. |
+| A7 | Open any quest at an NPC | Popup appears beside the quest frame with `Quest <id>` and a `You: …` line. Nothing is printed to chat. Closing the quest frame hides the popup. |
 | A8 | A quest you **have** completed vs one you have **not** | `You: yes - already completed` / `You: no - has not completed it` respectively. |
 | A9 | `/qt events`, accept a quest, `/qt events` | Trace lines for `QUEST_ACCEPTED` etc. with their arguments. **Record the `QUEST_ACCEPTED` arguments** — this closes "Still unverified" item 1. |
 | A10 | `/qt frames` | A yes/NO line per frame name. Record it (feeds Q5). |
@@ -48,8 +48,11 @@ quest `Q2` that B currently has **in their log, uncompleted**.
 | B5 | Compare with the truth | The answer in B4 matches what B's own popup says for `Q1` (B: open the quest or `/qt ui`). | A mismatch is a **correctness bug** — stop and report. |
 | B6 | A: `/qt ask Q2` | `<B>: on it now` | |
 | B7 | B: `/qt ask Q1` | B sees A's true state — the reverse direction works. | |
-| B8 | A opens a quest at an NPC | A's popup appears and, without typing anything, fills in B's line (auto-ask). | |
+| B8 | A opens a quest at an NPC | A's popup appears and, without typing anything, fills in B's line (auto-ask). **Chat stays completely silent** on A — no `Asking your group…`, no answer lines, no summary. | Any chat line here is bug #8 back again. |
 | B9 | B: `/reload`. Then A: `/qt ask Q1` | B still answers after the reload. | |
+| B10 | A opens `Q1` (B's line fills in). B leaves the group, then A re-invites B. A opens `Q1` again. | B is asked again and fills in — not left on `?`. | Stuck on `?` → the auto-ask dedupe is not being cleared on roster change. |
+| B11 | A clicks through 3 different quests quickly (open, close, open the next) | A's popup tracks the quest on screen. Chat stays silent. B answers all three (check with `/qt status` on A: the answer count grows). | |
+| B12 | A: `/qt ask Q1`, then `/qt ask Q2`, then `/qt ask Q1` again, all within 3 seconds | Three `Asking your group…` lines. Live answer lines for **both** quests. Exactly **two** summaries — one per quest ID, not one per command. | Three summaries, or a missing live line → pending asks are not keyed by quest ID. |
 
 **Passing B2, B4, B5 and B7 closes the gate.** Tick the last M0 box in [`ROADMAP.md`](ROADMAP.md#milestones),
 close Q4 if nothing looked throttled, and update R3.
@@ -75,8 +78,8 @@ Several are **known to fail today**; the expected column is the target.
 | C2 | B on a different `ns.PROTOCOL` (edit the constant locally) | `?  (incompatible addon version)`; B's queries unanswered | Expected to work |
 | C3 | B leaves the group | B disappears from A's popup and from `/qt status` | Dropped on roster change |
 | C4 | B turns the quest in after answering "no" | A's next ask shows "yes" | Works only on a **re-ask**; the cached "no" stays until then |
-| C5 | A opens the same quest twice | One ask, not two | Deduped by quest ID — but never re-asked for a member who joined later |
-| C6 | Rapid clicking through 5+ quests | No disconnect, no missing answers | No throttle exists — observe and record |
+| C5 | A opens the same quest twice | One ask, not two | Deduped by quest ID; the dedupe is cleared on every roster change, so a member who joined later is asked the next time the quest is opened |
+| C6 | Rapid clicking through 5+ quests | No disconnect, no missing answers | One query per quest opened, none printed to chat — no throttle exists, so observe and record |
 | C7 | Instance / LFG group | Round-trip works | `INSTANCE_CHAT` is not handled — expected to fail |
 | C8 | Cross-realm peer with the **same character name** as another peer, or as you | Distinct entries | Collide (keyed by bare name) |
 | C9 | A peer sends a zero, fractional, negative or out-of-range quest ID | Ignored silently: no answer is sent for it, nothing is cached for it | Expected to work |

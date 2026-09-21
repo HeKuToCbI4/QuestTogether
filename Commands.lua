@@ -1,8 +1,14 @@
 --[[----------------------------------------------------------------------------
 Commands -- the user-facing slash commands that do real work.
 
-Registered into ns.commands, a table Core dispatches into. Diagnostics.lua adds
-its own entries to the same table.
+Registered into ns.commands, a table Core dispatches into. Diagnostics.lua and
+UI.lua add their own entries to the same table.
+
+The asking itself lives in Query.lua; /qt and /qt ask are the thin front ends.
+
+/qt help lives here because Commands is the one module that is never deleted: it
+prints ns.helpLines, which every module fills in for its own commands, so the
+list is always exactly the commands this install actually has.
 
 Convention: every module that contributes commands does
     ns.commands = ns.commands or {}
@@ -13,52 +19,6 @@ local ADDON_NAME, ns = ...
 ---@cast ns QT.Namespace
 
 ns.commands = ns.commands or {}
-
-local askedQuest = nil   -- quest ID of the most recent ask, for live reporting
-
--- Protocol calls this when any peer answers us. Printing live during a request
--- is presentation, so it lives here rather than in the transport layer.
-ns.onAnswer = function(peer, questID)
-    if peer and questID == askedQuest then
-        ns.Print("  " .. peer.name .. ": " .. ns.DescribePeerState(peer, questID))
-    end
-end
-
-local function Report(questID)
-    if next(ns.peers) == nil then
-        ns.Print("Nobody in your group is running Quest Together.")
-        return
-    end
-    ns.Print("Quest " .. questID .. ":")
-    for _, p in pairs(ns.peers) do
-        ns.Print("  " .. p.name .. ": " .. ns.DescribePeerState(p, questID))
-    end
-end
-
--- Shared ask, used by both /qt and the UI's auto-ask. Returns ok, err so a
--- caller can choose to report the failure (manual /qt does) or stay quiet
--- (auto-ask need not tell the user they are not in a group).
----@param questID number?
----@return boolean ok
----@return string? err   set only when ok is false
-function ns.Ask(questID)
-    if not questID then return false, "no quest" end
-    -- Validate first: an invalid ID must not reach the wire, and askedQuest must
-    -- not be set by an ask that never left the machine.
-    questID = ns.ValidQuestID(questID)
-    if not questID then return false, "invalid quest ID" end
-    askedQuest = questID
-    local ok, err = ns.Send(ns.PROTOCOL .. "|Q|" .. questID)
-    if not ok then return false, err end
-
-    ns.Print("Asking your group about quest " .. questID .. "...")
-    if _G.C_Timer and _G.C_Timer.After then
-        _G.C_Timer.After(ns.REPLY_WINDOW, function() Report(questID) end)
-    else
-        Report(questID)
-    end
-    return true
-end
 
 function ns.commands.ask(rest)
     local questID = tonumber(rest) or ns.LocalQuestID()
@@ -99,3 +59,45 @@ function ns.commands.status()
 end
 
 ns.commands[""] = ns.commands.ask
+
+------------------------------------------------------------------------------
+-- /qt help
+--
+-- Prints ns.helpLines in registration order, which follows the .toc: ungrouped
+-- lines first, then each group under its heading. Nothing here knows which
+-- commands exist -- that is the point. Delete a module and its lines go with it.
+------------------------------------------------------------------------------
+
+---@param h QT.HelpLine
+local function PrintHelpLine(h)
+    ns.Print(("  %-16s %s"):format(h.cmd, h.text))
+end
+
+function ns.commands.help()
+    local version = ns.AddonVersion()
+    ns.Print(version and ("v" .. version .. " -- commands:") or "commands:")
+
+    local lines = ns.helpLines or {}
+    for _, h in ipairs(lines) do
+        if not h.group then PrintHelpLine(h) end
+    end
+
+    -- Grouped lines last, each heading printed once, in the order the group was
+    -- first registered.
+    local printed = {}
+    for i, h in ipairs(lines) do
+        if h.group and not printed[h.group] then
+            printed[h.group] = true
+            ns.Print("-- " .. h.group .. " --")
+            for j = i, #lines do
+                if lines[j].group == h.group then PrintHelpLine(lines[j]) end
+            end
+        end
+    end
+end
+
+ns.AddHelp("/qt",           "ask about the quest currently open")
+ns.AddHelp("/qt ask <id>",  "ask about a specific quest ID")
+ns.AddHelp("/qt ping",      "announce yourself to the group")
+ns.AddHelp("/qt status",    "list peers and how much we know")
+ns.AddHelp("/qt help",      "list these commands")
