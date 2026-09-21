@@ -4,8 +4,8 @@ Core -- bootstrap, event wiring, slash dispatch.
 Deliberately thin. If this file starts growing, something in it belongs in
 another module.
 
-Load order: Compat -> Peers -> Protocol -> Commands -> Diagnostics -> Core, as
-listed in the .toc. Order only matters for definitions; modules reach each other
+Load order: Compat -> Peers -> Protocol -> Commands -> Diagnostics -> UI -> Core,
+as listed in the .toc. Order only matters for definitions; modules reach each other
 through `ns` and must only CALL across module boundaries at runtime. A cross-module
 call during load is the same forward-reference trap that crashed v0.1 (see
 PLAN.md, "Third run").
@@ -47,8 +47,8 @@ f:RegisterEvent("GROUP_ROSTER_UPDATE")
 f:SetScript("OnEvent", function(_, event, arg1, arg2, arg3, arg4)
     if event == "ADDON_LOADED" then
         if arg1 ~= ADDON_NAME then return end
-        -- SavedVariables land just before this fires. v0.1 has no settings yet,
-        -- but touching the table now means v0.2 can start reading from it.
+        -- SavedVariables land just before this fires. There are no settings yet
+        -- (v0.0.2), but touching the table now means v0.2 can start reading it.
         _G.QuestTogetherDB = _G.QuestTogetherDB or {}
         ns.RegisterPrefix()
 

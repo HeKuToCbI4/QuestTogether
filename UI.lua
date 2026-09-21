@@ -9,10 +9,15 @@ is useful: one Frame, one FontString, no layout, no skinning, no dragging.
   * /qt ui forces it open solo, so the whole thing is testable without a group
 
 It renders the local player from the completion oracle (authoritative, live) and
-every known peer from the Peers registry (tri-state: yes / no / unknown). It never
-asks; it only displays. Asking stays /qt, so before anyone is asked peers show "?"
+every known peer from the Peers registry (tri-state: yes / no / unknown). Rendering
+never asks; the one place this file does ask is the auto-ask on QUEST_DETAIL below,
+which goes through ns.Ask exactly as /qt does. Until a peer answers they show "?"
 and stay "?" -- never flipping to "no" (the one mistake this addon exists to
 prevent).
+
+Known gap: only peers we have HEARD FROM are listed. A group member without the
+addon is absent from the panel rather than shown as "?", and an empty peer list
+reads "(not in a group)" even when grouped.
 
 Deliberately NOT here yet:
   * eligibility / prerequisite status -- no client API for it (see PLAN.md); a
@@ -21,7 +26,9 @@ Deliberately NOT here yet:
 
 Loaded AFTER Diagnostics so it can wrap ns.onAnswer (installed by Commands) and
 extend ns.commands.help (installed by Diagnostics). Both wraps only READ at load
-time and CALL at runtime, so the cross-module rule holds.
+time and CALL at runtime, so the cross-module rule holds -- but the read makes this
+file's position in the .toc load-bearing: listed before Commands or Diagnostics,
+the wraps silently capture nil.
 ------------------------------------------------------------------------------]]
 
 local ADDON_NAME, ns = ...

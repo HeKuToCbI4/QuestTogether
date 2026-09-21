@@ -5,11 +5,13 @@
 You're grouped with a friend. You walk up to an NPC and there's a quest. Do they
 need it too, or are you about to drag them through content they finished months ago?
 
-Quest Together answers that. It annotates the quests you look at with the
-completion status of everyone in your group.
+Quest Together answers that. It asks everyone in your group about the quest you are
+looking at, and shows you who has already completed it.
 
-> **Status:** v0.0.2 — chat-driven, plus a minimal status popup. See
-> [`PLAN.md`](PLAN.md) for what v0.2+ adds.
+> **Status:** v0.0.2 — early prototype. Chat-driven, plus a minimal status popup.
+> The addon-message round-trip between two real clients is **not yet verified**
+> (see [`docs/TESTING.md`](docs/TESTING.md)). What works today and what is only
+> planned are listed separately [below](#what-it-does).
 
 ---
 
@@ -23,45 +25,60 @@ addon-to-addon messages, within the group.
 **Everyone in the group runs the addon.** That is the premise of the design, not a
 caveat attached to it.
 
-When there's no answer for someone, we say so:
-
-| Situation | What you see |
-|---|---|
-| Peer running the addon | ✓ / ✗ shown for them |
-| Peer not running the addon | `?` — unknown |
-| Peer on an incompatible version | `?` plus an "outdated" hint |
-| Answer in flight, or timed out | `?` |
-| You're solo | Everything works; nobody to compare against |
-
 **"We don't know" is never rendered as "no."** A false ✗ would send you and a friend
 on a quest one of you has already finished — the exact failure this addon exists to
 prevent.
+
+What you see for a group member:
+
+| Situation | v0.0.2 (today) | Planned |
+|---|---|---|
+| Peer running the addon, answered | `yes` / `no` / `on it now` | ✓ / ✗ / ◈ glyphs |
+| Peer running the addon, no answer (yet, or timed out) | `?  (no answer)` | `?` with a "no response" hint |
+| Peer on an incompatible protocol revision | `?  (incompatible addon version)` | same, with an "outdated" hint |
+| Peer **not** running the addon | **Not listed at all** — the popup only knows peers it has heard from | Listed as `?` |
+| Peer who has left the group | Still listed until `/reload` | Dropped on roster change |
+| You're solo | Popup shows your own state only | same |
+
+The last two gaps (members without the addon, members who left) are tracked as
+issues. Until they are fixed, a group member missing from the popup means "no addon
+heard from" — **not** "no".
 
 ---
 
 ## What it does
 
-**Quest detail view** — open any quest at an NPC and see, per party member, whether
-they've already turned it in. This is the primary use case.
+### Works today (v0.0.2)
 
-**Quest log annotations** — every quest in your own log, labelled with who in the
-group still needs it. Turns "let's go do some quests" into "let's go finish *these*."
+- **Status popup beside the quest frame.** Open a quest at an NPC: the popup shows
+  your own completion state (live from the client) and every peer heard from.
+- **Auto-ask.** Opening a quest asks the group about it once per quest ID.
+- **Chat output.** Answers print live as they arrive; a summary follows after
+  3 seconds.
+- **"On it now".** A peer who has the quest in their log but has not completed it is
+  reported separately from a plain "no".
+- **Version check.** Peers on a different protocol revision are marked incompatible
+  and never answered or parsed.
 
-**Available-quest lists** — when an NPC offers several quests, all of them are
-annotated at once, so you can pick the one you both actually need.
+### Planned (not implemented)
 
-**Who's already on it** — party members who currently have the quest in their log
-are marked separately from those who've completed it. This is cheap to compute
-(quest logs are ~25 entries) so it's synced eagerly rather than on demand.
+Specified in [`PLAN.md`](PLAN.md#7-ux-specification); none of this exists yet:
+
+- **Quest log annotations** — every quest in your log, labelled with who still needs it.
+- **Available-quest lists** — all quests an NPC offers annotated at once.
+- **Eager quest-log sync** — "who's on it" without asking.
+- **Tooltips, glyph markers, settings panel, privacy toggles.**
 
 ---
 
 ## Install
 
-Drop the addon folder into your client's `Interface/AddOns/` directory.
+Drop the addon folder into your client's `Interface/AddOns/` directory. The folder
+**must** be named `QuestTogether` — the client loads `<FolderName>.toc` and nothing
+else, and fails silently when they differ.
 
 > **Note:** the exact install path for WoW Forever is unconfirmed — see
-> [Open Questions](PLAN.md#open-questions). Reports indicate Forever reads the
+> [Open Questions](PLAN.md#open-questions) (Q2). Reports indicate Forever reads the
 > Mainline addon directory. Verify before publishing install instructions.
 
 Then `/reload`, and enable **Quest Together** in the AddOns list.
@@ -81,19 +98,17 @@ solo for testing.
 | `/qt ping` | Announce yourself to the group |
 | `/qt status` | List peers heard from, and how much we know about them |
 | `/qt ui` | Toggle the status popup (works solo) |
+| `/qt help` | List commands |
 
 Solo verification tools — these run with one client and nobody else online:
 
 | Command | Effect |
 |---|---|
 | `/qt events` | Toggle tracing of quest events and their arguments |
-| `/qt frames` | List the UI objects v0.2 would hook |
+| `/qt frames` | List the UI objects M4 would hook |
 
 Answers print live as they arrive, then a summary follows after 3 seconds. Peers
-that never answer stay `?` — never `✗`.
-
-A minimal status popup ships now; the full panel and quest-log annotations are
-specified in [`PLAN.md`](PLAN.md#ux-specification) and still to come.
+that never answer stay `?` — never "no".
 
 ---
 
@@ -103,17 +118,21 @@ Quest Together broadcasts information about your character to the people you gro
 with. That is the entire mechanism, so it deserves to be said out loud rather than
 buried:
 
-- **What is shared:** which quests you have completed, and which quests are
-  currently in your log.
+- **What is shared:** for any quest ID a group member asks about — whether you have
+  completed it, and whether it is currently in your log. Also the bare fact that you
+  run the addon, and its protocol revision.
 - **Who receives it:** only members of your current group, over the group-only
-  addon channel. Messages are never sent to a public channel and never leave your
-  group.
-- **When:** completion data is sent only when you ask — explicitly with `/qt`, or
-  automatically when you open a quest (v0.0.2). Nothing is broadcast unprompted.
-  (v0.2 plans to additionally broadcast your active quest log when it changes —
-  about 25 quest IDs — behind a separate toggle.)
-- **Control:** both behaviours can be disabled independently in settings. If you
-  stop responding, peers see `?` for you — the same state as not having the addon.
+  addon channel. Replies are broadcast to the whole group, not only to the asker.
+  Messages are never sent to a public channel and never leave your group.
+- **When:**
+  - A presence announcement is sent **automatically** when you enter the world and
+    on every group roster change.
+  - A completion answer is sent **automatically** whenever any group member asks
+    (their `/qt`, or them simply opening a quest). You are not prompted.
+- **Control: there is none yet.** v0.0.2 has no settings. The only way to stop
+  answering is to disable the addon — peers then see no entry for you. Two
+  independent toggles (answer queries / share quest log) are planned
+  ([`PLAN.md` §6](PLAN.md#6-data-model)) and tracked as an issue.
 
 Nothing is transmitted to any third party, no server, no analytics.
 
@@ -161,7 +180,7 @@ protocol itself is flavor-agnostic and a shim is plausible later.
 
 ---
 
-## Repository state
+## For developers
 
 ```
 QuestTogether/
@@ -170,29 +189,28 @@ QuestTogether/
 ├── Peers.lua            # peer registry; home of the tri-state invariant
 ├── Protocol.lua         # wire format and transport
 ├── Commands.lua         # user-facing slash commands
-├── Diagnostics.lua      # solo verification tools — dev only, deletable
+├── Diagnostics.lua      # solo verification tools + /qt help
 ├── UI.lua               # the status popup panel
 ├── Core.lua             # bootstrap, events, slash dispatch
 ├── README.md
-└── PLAN.md
+├── PLAN.md              # design, protocol, milestones, risks, measurements
+├── CHANGELOG.md
+└── docs/
+    └── TESTING.md       # manual test checklists (incl. the two-client M0 gate)
 ```
-
-### ⚠️ Rename the folder before your next `/reload`
-
-The client loads `<FolderName>.toc` and nothing else. The folder is currently
-`WowQuestAddon` while the `.toc` is `QuestTogether.toc`, **so the addon will not load
-at all** until the folder is renamed to match. It fails *silently* — no error, the
-addon simply isn't in the list.
-
-If your `Interface/AddOns/WowQuestAddon/` is a copy or a symlink, re-point it at the
-renamed folder too.
 
 ### Load order
 
 `Compat → Peers → Protocol → Commands → Diagnostics → UI → Core`, as listed in the `.toc`.
-Order matters only for *definitions*: modules reach each other through `ns` and must
-only ever **call** across module boundaries at runtime. A cross-file call during load
-is the same forward-reference trap that crashed v0.1.
+
+The rule: modules reach each other through `ns` and must only ever **call** across
+module boundaries at runtime. A cross-file call during load is the same
+forward-reference trap that crashed the first prototype.
+
+**Known exception:** `UI.lua` *reads* `ns.onAnswer` (set by `Commands.lua`) and
+`ns.commands.help` (set by `Diagnostics.lua`) at load time in order to wrap them.
+That makes `UI.lua`'s position after both of them load-bearing. Replacing the wrap
+chains with registries is tracked as an issue.
 
 ### Why these seven files
 
@@ -202,19 +220,14 @@ is the same forward-reference trap that crashed v0.1.
 | `Peers` | What we know about group members | Cache policy changes |
 | `Protocol` | Wire format, send/receive | The protocol revision bumps |
 | `Commands` | Slash commands that do real work | Command UX changes |
-| `Diagnostics` | Local verification tools only | Never — it's disposable |
+| `Diagnostics` | Local verification tools, and `/qt help` | A new surface needs measuring |
 | `UI` | The status popup panel | The panel's presentation changes |
 | `Core` | Bootstrap and event wiring | Wiring changes |
 
-**`Diagnostics.lua` can be deleted before release.** Nothing else depends on it, and
-it owns its own event frame precisely so that stays true.
-
-### The old stub `.toc` is gone
-
-`QuestWithFirends.toc` has been deleted. It was never read — the filename didn't match
-the folder (`Firends`, transposed) — and it carried a placeholder
-`## Interface: 99999`, an empty `## SavedVariables:`, an empty `## RequiredDeps:`
-directive, and a bogus `X-Curse-Project-ID: 999999`.
+**`Diagnostics.lua` is *almost* deletable.** No other module calls into it and it
+owns its own event frame — but it also defines `/qt help` for every command, so
+deleting it today leaves `/qt help` listing only `/qt ui`. Move the help text out
+before removing the file for release.
 
 ---
 
@@ -222,7 +235,12 @@ directive, and a bogus `X-Curse-Project-ID: 999999`.
 
 | Document | Contents |
 |---|---|
-| [`PLAN.md`](PLAN.md) | Architecture, wire protocol, milestones, risks, testing strategy |
+| [`PLAN.md`](PLAN.md) | Architecture, wire protocol (current and planned), milestones, risks, measurements |
+| [`docs/TESTING.md`](docs/TESTING.md) | Manual test checklists — solo smoke test and the two-client M0 gate |
+| [`CHANGELOG.md`](CHANGELOG.md) | Release history |
+
+Where the documents and the code disagree, **the code is authoritative** for current
+behaviour; `PLAN.md` marks each section as *implemented* or *planned*.
 
 ---
 

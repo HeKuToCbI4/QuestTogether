@@ -1,0 +1,80 @@
+# Manual testing
+
+There are no automated tests yet (see [`PLAN.md` §11](../PLAN.md#11-testing-strategy)).
+These checklists are the test suite. Record results — including the date, client
+build and any surprising output — in [`PLAN.md` §12](../PLAN.md#12-open-questions).
+
+Expected chat lines are prefixed with `Quest Together` in green; that prefix is
+omitted below.
+
+---
+
+## A. Solo smoke test (one client, ~2 minutes)
+
+Run after every change, before anything else.
+
+| # | Step | Expected |
+|---|---|---|
+| A1 | `/reload`, then check the AddOns list | **Quest Together** is listed and enabled. No Lua error on load. |
+| A2 | `/qt help` | The command list, ending with the `/qt ui` line. |
+| A3 | `/qt ui` | Popup appears: `No quest open.` `/qt ui` again hides it. |
+| A4 | `/qt` with no quest open | `No quest selected. Open a quest at an NPC, or use /qt ask <questID>.` |
+| A5 | `/qt ask 92460` while solo | `Cannot ask: not in a group` |
+| A6 | `/qt status` | `No peers heard from yet. Try /qt ping while grouped.` |
+| A7 | Open any quest at an NPC | Popup appears beside the quest frame with `Quest <id>` and a `You: …` line. Nothing is printed to chat (solo stays quiet). Closing the quest frame hides the popup. |
+| A8 | A quest you **have** completed vs one you have **not** | `You: yes - already completed` / `You: no - has not completed it` respectively. |
+| A9 | `/qt events`, accept a quest, `/qt events` | Trace lines for `QUEST_ACCEPTED` etc. with their arguments. **Record the `QUEST_ACCEPTED` arguments** — this closes "Still unverified" item 1. |
+| A10 | `/qt frames` | A yes/NO line per frame name. Record it (feeds Q5). |
+
+---
+
+## B. Two-client round-trip — **the M0 gate**
+
+The one test that can still kill the project: does an addon message cross between
+two grouped clients at all?
+
+**Setup.** Two accounts, two clients (A and B), same addon version on both, both
+characters in the open world (not instanced), both with no Lua errors on load.
+Pick a quest ID `Q1` that **A has completed and B has not** (or the reverse), and a
+quest `Q2` that B currently has **in their log, uncompleted**.
+
+| # | Step | Expected | If it fails |
+|---|---|---|---|
+| B1 | A invites B; B accepts | On **both** clients: `<other> has the addon.` within a second or two (presence is announced on roster change). | Go to B2 before concluding anything. |
+| B2 | A: `/qt ping` | A: `Announced to the group…`. B: `<A> has the addon.` (if not already printed). | `Prefix is not registered` → registration failed; record it. No line on B → **the gate has failed**; record exactly what each client printed, then try B2 from B → A. |
+| B3 | Both: `/qt status` | Each lists the other as `compatible  (0 answers cached)`. | |
+| B4 | A: `/qt ask Q1` | A: `Asking your group about quest Q1...`, then a live line `<B>: no - has not completed it` (or `yes - already completed`), then after 3 s the summary with the same answer. | `?  (no answer)` in the summary → B received nothing or could not answer. On B, `/qt status` shows whether B heard A at all. |
+| B5 | Compare with the truth | The answer in B4 matches what B's own popup says for `Q1` (B: open the quest or `/qt ui`). | A mismatch is a **correctness bug** — stop and report. |
+| B6 | A: `/qt ask Q2` | `<B>: on it now` | |
+| B7 | B: `/qt ask Q1` | B sees A's true state — the reverse direction works. | |
+| B8 | A opens a quest at an NPC | A's popup appears and, without typing anything, fills in B's line (auto-ask). | |
+| B9 | B: `/reload`. Then A: `/qt ask Q1` | B still answers after the reload. | |
+
+**Passing B2, B4, B5 and B7 closes the gate.** Tick the last M0 box in `PLAN.md` §8,
+close Q4 if nothing looked throttled, and update R3.
+
+### Observations to record even on a pass
+
+- Latency between the ask and the live answer line.
+- Sender name format as shown in `<B> has the addon.` — `Name` or `Name-Realm`? (feeds Q7)
+- Whether anything differs when the pair is **cross-realm**.
+- Whether `/qt status` on A shows cached answers growing on a third client C that
+  never asked (passive caching via broadcast replies).
+
+---
+
+## C. Failure matrix (after the gate is closed)
+
+Each of these must produce an honest, non-misleading state — never a false "no".
+Several are **known to fail today**; the expected column is the target.
+
+| # | Scenario | Target | v0.0.2 |
+|---|---|---|---|
+| C1 | B has the addon disabled | B shown as `?` | B is not listed at all; popup may read `(not in a group)` |
+| C2 | B on a different `ns.PROTOCOL` (edit the constant locally) | `?  (incompatible addon version)`; B's queries unanswered | Expected to work |
+| C3 | B leaves the group | B disappears from A's popup | B stays listed until `/reload` |
+| C4 | B turns the quest in after answering "no" | A's next ask shows "yes" | Works only on a **re-ask**; the cached "no" stays until then |
+| C5 | A opens the same quest twice | One ask, not two | Deduped by quest ID — but never re-asked for a member who joined later |
+| C6 | Rapid clicking through 5+ quests | No disconnect, no missing answers | No throttle exists — observe and record |
+| C7 | Instance / LFG group | Round-trip works | `INSTANCE_CHAT` is not handled — expected to fail |
+| C8 | Cross-realm peer with the **same character name** as another peer, or as you | Distinct entries | Collide (keyed by bare name) |

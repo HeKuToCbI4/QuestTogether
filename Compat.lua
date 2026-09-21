@@ -26,7 +26,7 @@ local ADDON_NAME, ns = ...
 local C_ChatInfo = rawget(_G, "C_ChatInfo")
 local C_QuestLog = rawget(_G, "C_QuestLog")
 
--- Resolved once at load. Diagnostics prints this table back to the user.
+-- Resolved once at load.
 ns.api = {
     send        = (C_ChatInfo and C_ChatInfo.SendAddonMessage)           or _G.SendAddonMessage,
     register    = (C_ChatInfo and C_ChatInfo.RegisterAddonMessagePrefix) or _G.RegisterAddonMessagePrefix,
@@ -45,7 +45,8 @@ ns.api = {
 ns.onAnswer = nil
 
 -- Whole namespaces, so Diagnostics can probe a surface without this file
--- having to enumerate every member of it.
+-- having to enumerate every member of it. Currently unused: the probes that read
+-- it (/qt env) were retired 2026-09-21. Kept for the next surface to measure.
 ns.namespaces = {
     C_ChatInfo   = C_ChatInfo,
     C_QuestLog   = C_QuestLog,

@@ -1,0 +1,37 @@
+# Changelog
+
+Version numbers follow the `## Version` field of `QuestTogether.toc`.
+
+## Unreleased
+
+### Documentation
+- README now separates what works today from what is planned, and the Privacy
+  section describes the actual behaviour (automatic presence announcements and
+  automatic answers; no opt-out yet).
+- PLAN.md documents the implemented revision-2 wire protocol; the batched protocol
+  is marked as planned and renumbered to revision 3.
+- PLAN.md: data model, UX spec and testing strategy marked as targets with
+  "as built" notes; milestone checkboxes, R7, R11 and the M0 gate note corrected;
+  `UI.lua` added to the module map and load order; broken anchors fixed.
+- Added `docs/TESTING.md` (solo smoke test and the two-client M0 gate checklist).
+- Stale source comments corrected (load order, auto-ask, retired probes).
+
+## 0.0.2
+
+- Minimal status popup beside the quest frame (`UI.lua`), `/qt ui` to toggle it solo.
+- Auto-ask: opening a quest asks the group about it, once per quest ID.
+- Wire protocol revision 2: `H` / `Q` / `A`, with an "on it now" answer status.
+- One-shot measurement probes (`/qt env`, `/qt probe`, `/qt log`, `/qt scan`) retired;
+  their results are recorded in PLAN.md §12. `/qt events` and `/qt frames` remain.
+
+## Earlier prototypes ("v0.1" in PLAN.md)
+
+- Single-file prototype used to measure the WoW Forever client (API presence, the
+  completion oracle, the `GetInfo` schema).
+- Crashed once with `attempt to call a nil value`: `SafeStr` called `IsSecret` above
+  its `local function` definition. Led to the split into modules that communicate
+  through `ns` and only call each other at runtime.
+- Repository hygiene from that period: the addon folder was renamed from
+  `WowQuestAddon` to `QuestTogether` to match the `.toc` (the client silently skips
+  an addon whose folder and `.toc` names differ), and the never-loaded stub
+  `QuestWithFirends.toc` was deleted.
