@@ -2,7 +2,7 @@
 Diagnostics -- in-game verification for the questions still open.
 
 This entire file is meant to be deletable before release: delete it, drop its line
-from the .toc, and nothing else changes. Its two commands register into ns.commands
+from the .toc, and nothing else changes. Its commands register into ns.commands
 and their help lines into ns.helpLines, so /qt help simply stops listing them.
 Nothing anywhere depends on this file.
 
@@ -18,6 +18,7 @@ What remains probes the questions still open:
   * /qt channel -- whether this client knows instance (LFG) groups, and which
     channel ns.GroupChannel would pick right now (still unverified)
   * /qt sendtest -- what SendAddonMessage returns here (feeds Q4)
+  * /qt realm -- what the client says about the player's realm (feeds Q7)
 
 It owns its own event frame for quest-event tracing, so Core never learns that
 tracing exists. Sharing Core's frame would make this file undeletable.
@@ -69,8 +70,9 @@ end
 ------------------------------------------------------------------------------
 -- /qt sendtest -- what does SendAddonMessage actually RETURN on this client?
 --
--- Still unmeasured: older builds return a boolean, newer ones an
--- Enum.SendAddonMessageResult code where 0 means success. ns.Send has to read
+-- Measured solo 2026-09-21: this client returns a numeric
+-- Enum.SendAddonMessageResult code (5 = NotInGroup). The success value, grouped,
+-- is still unobserved. Older builds return a boolean instead. ns.Send has to read
 -- that result, and until this is settled it reads it conservatively (see the
 -- table above ns.Send in Protocol.lua). This probe settles it.
 --
@@ -166,6 +168,40 @@ function ns.commands.channel()
 end
 
 ------------------------------------------------------------------------------
+-- /qt realm -- what does the client say about the player's realm?
+--
+-- Peer keys are "Name-Realm" (ns.PeerKey) and lean on GetNormalizedRealmName,
+-- which is unmeasured here -- and /dump printed nothing on this client, so it
+-- cannot be used to find out. Every line reports what was actually found.
+------------------------------------------------------------------------------
+
+function ns.commands.realm()
+    ns.Print("realm probe:")
+    ns.Print(("  GetNormalizedRealmName  %-3s  ->  %s"):format(
+        ns.yn(_G.GetNormalizedRealmName), Call(_G.GetNormalizedRealmName)))
+    ns.Print(("  GetRealmName            %-3s  ->  %s"):format(
+        ns.yn(_G.GetRealmName), Call(_G.GetRealmName)))
+
+    -- Both returns matter: the second is the realm, nil or "" on our own realm.
+    for _, api in ipairs({ "UnitName", "UnitFullName" }) do
+        local fn = _G[api]
+        if not fn then
+            ns.Print(("  %s(\"player\")  ->  no such API"):format(api))
+        else
+            local ok, name, realm = pcall(fn, "player")
+            if ok then
+                ns.Print(("  %s(\"player\")  ->  %s, %s"):format(api, ns.SafeStr(name), ns.SafeStr(realm)))
+            else
+                ns.Print(("  %s(\"player\")  ->  ERROR: %s"):format(api, ns.SafeStr(name)))
+            end
+        end
+    end
+
+    local key, display = ns.PlayerKey()
+    ns.Print("  our own peer key:  " .. ns.SafeStr(key) .. "   shown as:  " .. ns.SafeStr(display))
+end
+
+------------------------------------------------------------------------------
 -- Help, under a heading of its own: these are probes, not everyday commands.
 ------------------------------------------------------------------------------
 
@@ -175,6 +211,7 @@ ns.AddHelp("/qt events", "toggle tracing of quest events and their arguments", P
 ns.AddHelp("/qt frames", "list the UI objects M4 would hook", PROBES)
 ns.AddHelp("/qt channel", "probe instance-group detection and the channel we would use", PROBES)
 ns.AddHelp("/qt sendtest", "print what SendAddonMessage returns here (run solo and grouped)", PROBES)
+ns.AddHelp("/qt realm", "print what the client reports as your name and realm", PROBES)
 
 ------------------------------------------------------------------------------
 -- Event tracing frame

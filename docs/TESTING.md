@@ -18,7 +18,7 @@ Run after every change, before anything else.
 | # | Step | Expected |
 |---|---|---|
 | A1 | `/reload`, then check the AddOns list | **Quest Together** is listed and enabled. No Lua error on load. |
-| A2 | `/qt help` | Header `v0.0.2 -- commands:` (the version comes from the `.toc`), then `/qt`, `/qt ask <id>`, `/qt ping`, `/qt status`, `/qt help`, `/qt ui`, then `-- still-open probes --` with `/qt events` and `/qt frames`. |
+| A2 | `/qt help` | Header `v0.0.2 -- commands:` (the version comes from the `.toc`), then `/qt`, `/qt ask <id>`, `/qt ping`, `/qt status`, `/qt help`, `/qt ui`, then `-- still-open probes --` with `/qt events`, `/qt frames`, `/qt channel`, `/qt sendtest` and `/qt realm`. |
 | A3 | `/qt ui` | Popup appears: `No quest open.` `/qt ui` again hides it. |
 | A4 | `/qt` with no quest open | `No quest selected. Open a quest at an NPC, or use /qt ask <questID>.` |
 | A5 | `/qt ask 92460` while solo | `Cannot ask: not in a group` |
@@ -28,7 +28,7 @@ Run after every change, before anything else.
 | A9 | `/qt events`, accept a quest, `/qt events` | Trace lines for `QUEST_ACCEPTED` etc. with their arguments. **Record the `QUEST_ACCEPTED` arguments** — this closes "Still unverified" item 1. |
 | A10 | `/qt frames` | A yes/NO line per frame name. Record it (feeds Q5). |
 | A11 | `/qt ask 0`, `/qt ask 1.5`, `/qt ask -3` | `Cannot ask: invalid quest ID` — rejected before anything is sent. `/qt ask 92460` while solo still reads `Cannot ask: not in a group`, so the guard did not swallow valid IDs. |
-| A12 | `/dump GetNormalizedRealmName()` | **Record the result.** A realm string means peer keys are full `Name-Realm`; `nil` or an error means the API is absent and keys fall back to the bare name (still correct, just no better than before). Feeds [Q7](MEASUREMENTS.md#open-questions). |
+| A12 | `/qt realm` (`/dump` prints nothing on this client, so it cannot be used) | **Record the whole output.** For `GetNormalizedRealmName`, a realm string means peer keys are full `Name-Realm`; `nil` or an error means the API is absent and keys fall back to the bare name (still correct, just no better than before). Feeds [Q7](MEASUREMENTS.md#open-questions). |
 | A13 | `/qt channel` while solo | A block of probe lines. `channel we would use:  nil` (solo). **Record whether `LE_PARTY_CATEGORY_INSTANCE` or `Enum.PartyCategory.Instance` exists and its value** — this is the measurement the instance-group fix is waiting on ("Still unverified" item 2). No Lua error even when the constant is absent. |
 | A14 | `/qt sendtest` while solo | Says whether `Enum.SendAddonMessageResult` exists (and lists it if so), then prints the count, value and type of everything the raw send returned. **Record the whole output** — this is the solo half of "Still unverified" item 3 in [`MEASUREMENTS.md`](MEASUREMENTS.md#still-unverified). No Lua error, whatever it prints. |
 
