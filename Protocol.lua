@@ -98,8 +98,14 @@ function ns.HandleAddonMessage(prefix, text, channel, sender)
     if prefix ~= ns.PREFIX then return end
     if type(text) ~= "string" or #text > 200 then return end
 
-    local key = ns.BaseName(sender)
-    if not key or key == (_G.UnitName and _G.UnitName("player")) then return end
+    -- Identity is the full normalised "Name-Realm" (ns.PeerKey), so a cross-realm
+    -- namesake of ours is a different peer rather than us. When the client cannot
+    -- name the player at all we cannot rule ourselves out -- so we do not try, and
+    -- behave as before rather than guessing.
+    local key, display = ns.PeerKey(sender)
+    if not key then return end
+    local me = ns.PlayerKey()
+    if me and key == me then return end
 
     local rev, kind, f3, f4 = strsplit("|", text)
 
@@ -107,7 +113,7 @@ function ns.HandleAddonMessage(prefix, text, channel, sender)
     -- cannot safely parse a format we do not know, and guessing risks sending a
     -- reply they would misread. Marking beats answering.
     local compatible = (rev == tostring(ns.PROTOCOL))
-    ns.MarkPeer(key, sender, compatible)
+    ns.MarkPeer(key, display, compatible)
     if not compatible then return end
 
     if kind == "Q" then

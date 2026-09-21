@@ -9,16 +9,13 @@ is useful: one Frame, one FontString, no layout, no skinning, no dragging.
   * /qt ui forces it open solo, so the whole thing is testable without a group
 
 It renders the local player from the completion oracle (authoritative, live) and
-every known peer from the Peers registry (tri-state: yes / no / unknown). Rendering
-never asks; the one place this file does ask is the auto-ask on QUEST_DETAIL below,
-which goes through ns.Ask exactly as /qt does -- but silently, because this panel
-is already showing what chat would otherwise repeat. Until a peer answers they
-show "?" and stay "?" -- never flipping to "no" (the one mistake this addon
-exists to prevent).
-
-Known gap: only peers we have HEARD FROM are listed. A group member without the
-addon is absent from the panel rather than shown as "?", and an empty peer list
-reads "(not in a group)" even when grouped.
+the rest of the group from ns.PeerLines, which joins the group roster against the
+Peers registry (tri-state: yes / no / unknown). Every group member gets a line,
+whether or not they run the addon. Rendering never asks; the one place this file
+does ask is the auto-ask on QUEST_DETAIL below, which goes through ns.Ask exactly
+as /qt does -- but silently, because this panel is already showing what chat would
+otherwise repeat. Until a peer answers they show "?" and stay "?" -- never
+flipping to "no" (the one mistake this addon exists to prevent).
 
 Deliberately NOT here yet:
   * eligibility / prerequisite status -- no client API for it (see
@@ -86,11 +83,19 @@ local function Update()
     else
         lines[#lines + 1] = "Quest " .. qid
         lines[#lines + 1] = DescribeSelf(qid)
-        if next(ns.peers) == nil then
-            lines[#lines + 1] = "(not in a group)"
+        -- Roster-driven (ns.PeerLines): every group member gets a line, including
+        -- the ones without the addon. Nothing to list has two causes, and
+        -- ns.GroupChannel tells them apart (wording from docs/UX.md).
+        local rows = ns.PeerLines(qid)
+        if #rows == 0 then
+            if ns.GroupChannel() then
+                lines[#lines + 1] = "None of your group has Quest Together."
+            else
+                lines[#lines + 1] = "Not in a group."
+            end
         else
-            for _, p in pairs(ns.peers) do
-                lines[#lines + 1] = "  " .. p.name .. ": " .. ns.DescribePeerState(p, qid)
+            for _, r in ipairs(rows) do
+                lines[#lines + 1] = "  " .. r.display .. ": " .. r.state
             end
         end
     end

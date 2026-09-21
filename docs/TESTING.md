@@ -21,11 +21,12 @@ Run after every change, before anything else.
 | A4 | `/qt` with no quest open | `No quest selected. Open a quest at an NPC, or use /qt ask <questID>.` |
 | A5 | `/qt ask 92460` while solo | `Cannot ask: not in a group` |
 | A6 | `/qt status` | `No peers heard from yet. Try /qt ping while grouped.` |
-| A7 | Open any quest at an NPC | Popup appears beside the quest frame with `Quest <id>` and a `You: …` line. Nothing is printed to chat. Closing the quest frame hides the popup. |
+| A7 | Open any quest at an NPC | Popup appears beside the quest frame with `Quest <id>`, a `You: …` line and, while solo, `Not in a group.` Nothing is printed to chat (solo stays quiet). Closing the quest frame hides the popup. |
 | A8 | A quest you **have** completed vs one you have **not** | `You: yes - already completed` / `You: no - has not completed it` respectively. |
 | A9 | `/qt events`, accept a quest, `/qt events` | Trace lines for `QUEST_ACCEPTED` etc. with their arguments. **Record the `QUEST_ACCEPTED` arguments** — this closes "Still unverified" item 1. |
 | A10 | `/qt frames` | A yes/NO line per frame name. Record it (feeds Q5). |
 | A11 | `/qt ask 0`, `/qt ask 1.5`, `/qt ask -3` | `Cannot ask: invalid quest ID` — rejected before anything is sent. `/qt ask 92460` while solo still reads `Cannot ask: not in a group`, so the guard did not swallow valid IDs. |
+| A12 | `/dump GetNormalizedRealmName()` | **Record the result.** A realm string means peer keys are full `Name-Realm`; `nil` or an error means the API is absent and keys fall back to the bare name (still correct, just no better than before). Feeds [Q7](MEASUREMENTS.md#open-questions). |
 
 ---
 
@@ -50,9 +51,11 @@ quest `Q2` that B currently has **in their log, uncompleted**.
 | B7 | B: `/qt ask Q1` | B sees A's true state — the reverse direction works. | |
 | B8 | A opens a quest at an NPC | A's popup appears and, without typing anything, fills in B's line (auto-ask). **Chat stays completely silent** on A — no `Asking your group…`, no answer lines, no summary. | Any chat line here is bug #8 back again. |
 | B9 | B: `/reload`. Then A: `/qt ask Q1` | B still answers after the reload. | |
-| B10 | A opens `Q1` (B's line fills in). B leaves the group, then A re-invites B. A opens `Q1` again. | B is asked again and fills in — not left on `?`. | Stuck on `?` → the auto-ask dedupe is not being cleared on roster change. |
-| B11 | A clicks through 3 different quests quickly (open, close, open the next) | A's popup tracks the quest on screen. Chat stays silent. B answers all three (check with `/qt status` on A: the answer count grows). | |
-| B12 | A: `/qt ask Q1`, then `/qt ask Q2`, then `/qt ask Q1` again, all within 3 seconds | Three `Asking your group…` lines. Live answer lines for **both** quests. Exactly **two** summaries — one per quest ID, not one per command. | Three summaries, or a missing live line → pending asks are not keyed by quest ID. |
+| B10 | B: disable Quest Together, `/reload`, stay grouped. A: open a quest | A's popup lists B **by name** as `?  (no addon heard from)`. A: `/qt ask Q1` gives the same line in the summary. | B missing from the list → the roster walk failed; record what `/qt status` shows. |
+| B11 | Re-enable on B; A: `/qt ask Q1`, then B leaves the group, then A: `/qt ask Q1` again | First ask names B with a real answer; after B leaves, B is gone from the list entirely (not a stale `yes`/`no`). | B still listed → pruning and the registry disagree about the key. |
+| B12 | A opens `Q1` (B's line fills in). B leaves the group, then A re-invites B. A opens `Q1` again. | B is asked again and fills in — not left on `?`. | Stuck on `?` → the auto-ask dedupe is not being cleared on roster change. |
+| B13 | A clicks through 3 different quests quickly (open, close, open the next) | A's popup tracks the quest on screen. Chat stays silent. B answers all three (check with `/qt status` on A: the answer count grows). | |
+| B14 | A: `/qt ask Q1`, then `/qt ask Q2`, then `/qt ask Q1` again, all within 3 seconds | Three `Asking your group…` lines. Live answer lines for **both** quests. Exactly **two** summaries — one per quest ID, not one per command. | Three summaries, or a missing live line → pending asks are not keyed by quest ID. |
 
 **Passing B2, B4, B5 and B7 closes the gate.** Tick the last M0 box in [`ROADMAP.md`](ROADMAP.md#milestones),
 close Q4 if nothing looked throttled, and update R3.
@@ -60,8 +63,12 @@ close Q4 if nothing looked throttled, and update R3.
 ### Observations to record even on a pass
 
 - Latency between the ask and the live answer line.
-- Sender name format as shown in `<B> has the addon.` — `Name` or `Name-Realm`? (feeds Q7)
-- Whether anything differs when the pair is **cross-realm**.
+- Sender name format as shown in `<B> has the addon.` — `Name` or `Name-Realm`? Note
+  that the addon now *shows* the bare name for a same-realm peer even when it keys
+  them as `Name-Realm`, so record the raw `sender` too if you can (`/qt events`-style
+  trace, or B's `/dump GetNormalizedRealmName()`). (feeds Q7)
+- Whether anything differs when the pair is **cross-realm**, and whether a cross-realm
+  peer is shown as `Name-Realm`. (feeds Q7)
 - Whether `/qt status` on A shows cached answers growing on a third client C that
   never asked (passive caching via broadcast replies).
 
@@ -74,14 +81,17 @@ Several are **known to fail today**; the expected column is the target.
 
 | # | Scenario | Target | v0.0.2 |
 |---|---|---|---|
-| C1 | B has the addon disabled | B shown as `?` | B is not listed at all; popup may read `(not in a group)` |
+| C1 | B has the addon disabled | B shown as `?` | `?  (no addon heard from)` — the list is driven by the roster |
 | C2 | B on a different `ns.PROTOCOL` (edit the constant locally) | `?  (incompatible addon version)`; B's queries unanswered | Expected to work |
 | C3 | B leaves the group | B disappears from A's popup and from `/qt status` | Dropped on roster change |
 | C4 | B turns the quest in after answering "no" | A's next ask shows "yes" | Works only on a **re-ask**; the cached "no" stays until then |
 | C5 | A opens the same quest twice | One ask, not two | Deduped by quest ID; the dedupe is cleared on every roster change, so a member who joined later is asked the next time the quest is opened |
 | C6 | Rapid clicking through 5+ quests | No disconnect, no missing answers | One query per quest opened, none printed to chat — no throttle exists, so observe and record |
 | C7 | Instance / LFG group | Round-trip works | `INSTANCE_CHAT` is not handled — expected to fail |
-| C8 | Cross-realm peer with the **same character name** as another peer, or as you | Distinct entries | Collide (keyed by bare name) |
+| C8 | Cross-realm peer with the **same character name** as another peer, or as you | Distinct entries | Expected to work — keyed by full `Name-Realm` (`ns.PeerKey`). Needs a cross-realm group to confirm |
+| C12 | Grouped, nobody else has the addon | Every member `?  (no addon heard from)` | Expected to work |
+| C13 | Grouped with 4 others, only one has the addon | All four listed; one answers, three read `?  (no addon heard from)` | Expected to work |
+| C14 | B leaves the group, then A `/qt status` and opens a quest | B gone from both | Expected to work — pruning now uses the same key as the registry |
 | C9 | A peer sends a zero, fractional, negative or out-of-range quest ID | Ignored silently: no answer is sent for it, nothing is cached for it | Expected to work |
 | C10 | B leaves, then A re-ask about the same quest | B is `?` again, never a stale `yes`/`no` from before they left | Expected to work |
 | C11 | Both clients change zone at the same time | Peers may briefly read `?`, then fill back in as every client re-announces on `PLAYER_ENTERING_WORLD` | Expected to work |

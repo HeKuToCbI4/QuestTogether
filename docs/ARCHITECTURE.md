@@ -274,8 +274,8 @@ defensible future feature and an explicit [non-goal](#non-goals) for v1.
 QuestTogetherDB = {}          -- SavedVariable; created empty, nothing reads it yet
 
 ns.peers = {                  -- session-scoped, in Peers.lua
-  ["Name"] = {                -- key: BARE character name (realm stripped) -- see Q7
-    name       = "Name-Realm",          -- display name, as the sender arrived
+  ["Name-Realm"] = {          -- key: full normalised Name-Realm -- ns.PeerKey, see Q7
+    name       = "Name",                -- display name; "Name-Realm" cross-realm
     compatible = true,                  -- protocol revision matched ours
     lastSeen   = 0,                     -- time() of the last message
     answered   = { [questID] = true },  -- true / false; absent key == UNKNOWN
@@ -285,8 +285,12 @@ ns.peers = {                  -- session-scoped, in Peers.lua
 ```
 
 Differences from the target that matter: there are **no settings** (so no privacy
-toggles), peers are keyed by bare name rather than GUID, and there is no `log` dataset
-and no `pending` table. Entries *are* dropped when a peer leaves the group — `ns.PrunePeers`
+toggles), peers are keyed by name-realm rather than GUID, and there is no `log` dataset
+and no `pending` table. The key is built in exactly one place, `ns.PeerKey` in
+`Compat.lua`, and `ns.GroupMembers` builds roster keys the same way — two key rules
+would silently split the registry in half. A sender that arrives without a realm is
+on our realm, so the player's own normalised realm is appended; if the client cannot
+report it the key falls back to the bare name. Entries *are* dropped when a peer leaves the group — `ns.PrunePeers`
 on every roster change — so [D2](#key-architectural-decisions) holds for the leaving half
 of the case. A peer who completes quests *while still in the group* is still cached
 until they leave.
