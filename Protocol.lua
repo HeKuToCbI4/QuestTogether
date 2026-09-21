@@ -12,11 +12,12 @@ Wire format v2 -- ASCII, '|' delimited, first field is the protocol revision:
 
 Outbound `H` is debounced (ns.AnnounceSoon): GROUP_ROSTER_UPDATE fires far more
 often than people join or leave, so a burst of roster events becomes one message.
-An `H` from a peer we did not already know is answered with our own `H`, after a
-jitter, so a client whose peer list is empty -- after a /reload, say -- fills back
-in as soon as anyone announces, rather than staying blind until somebody types.
-Receiving an `H` is otherwise unchanged, so the wire format and ns.PROTOCOL are
-untouched.
+An inbound `H` is answered with our own `H` when we have been QUIET -- when we have
+not announced in the last ns.ANNOUNCE_QUIET seconds -- and ignored otherwise. That
+is what lets a client whose peer list is empty (after a /reload) fill back in: it
+announces, everyone still quiet answers, and it hears them. It cannot loop, because
+answering makes us not quiet. Receiving an `H` is otherwise unchanged, so the wire
+format and ns.PROTOCOL are untouched.
 
 Deliberately small. Batched queries, the bitfield codec and the LOGS state sync
 all arrive with v0.2 -- the first two-client test should have as little to go
@@ -30,6 +31,11 @@ ns.PREFIX            = "QTOG"
 ns.PROTOCOL          = 2
 ns.REPLY_WINDOW      = 3   -- seconds to wait for peers before calling them unknown
 ns.ANNOUNCE_DEBOUNCE = 3   -- seconds; at most one automatic `H` per window
+-- Seconds of our own silence before we will answer somebody else's `H`. MUST stay
+-- comfortably above ANNOUNCE_DEBOUNCE plus the maximum jitter (3 + 2 = 5), or an
+-- answer could land after the window it was meant to close and the two clients
+-- would answer each other in turn forever.
+ns.ANNOUNCE_QUIET    = 10
 
 -- Every quest ID we touch arrives from another client, so it is hostile input
 -- (CLAUDE.md rule 5). `tonumber` alone is not a validator: it happily turns 0,
@@ -112,8 +118,8 @@ end
 -- The first call opens a window; every call inside it is absorbed, and ONE `H`
 -- goes out when the window closes. That is what makes a raid's burst of
 -- GROUP_ROSTER_UPDATEs -- role, online and zone changes all fire it -- cost one
--- message instead of a dozen, and it is also what keeps a burst of replies to
--- several new peers down to one message.
+-- message instead of a dozen, and it is also what keeps our answers to several
+-- peers' announcements down to one message.
 --
 -- Trailing rather than leading on purpose: presence is state, not an event
 -- (docs/PROTOCOL.md, "Sync state, not events"), so the LAST send of a burst is
@@ -156,6 +162,28 @@ function ns.AnnounceSoon(extra)
     return ok
 end
 
+-- Should we answer an inbound `H`?
+--
+-- Yes when we have been quiet -- no announcement of our own in the last
+-- ns.ANNOUNCE_QUIET seconds. That is the rule that gets a reloaded client its peer
+-- list back: it announces, everyone who has been quiet answers, and it hears them.
+--
+-- It cannot run away, because answering is itself an announcement: the moment we
+-- reply we stop being quiet, so the reply to our reply (and every `H` for the next
+-- ANNOUNCE_QUIET seconds) is ignored. A chain is therefore at most one round.
+--
+-- Without a clock we cannot measure quiet at all, so we fall back to the narrower
+-- rule of answering only a peer we had never heard of. That is weaker -- it misses
+-- the reload case -- but it is still loop-free, which matters more.
+---@param isNew boolean   whether this message created the peer entry
+---@return boolean
+local function ShouldAnswerHello(isNew)
+    local now = ns.Now()
+    if now == 0 then return isNew end
+    if not lastAnnounceAt then return true end
+    return (now - lastAnnounceAt) >= ns.ANNOUNCE_QUIET
+end
+
 -- Inbound. Core calls this inside pcall: a malformed payload from any peer must
 -- never throw inside our own session.
 ---@param prefix any    untrusted: every argument comes from another client
@@ -179,16 +207,15 @@ function ns.HandleAddonMessage(prefix, text, channel, sender)
     if not compatible then return end
 
     if kind == "H" then
-        -- Answer a presence announcement from somebody we had not heard of, so
-        -- they learn about us too. Without this, a client that has just /reloaded
-        -- has an empty peer list and stays that way until traffic happens to
-        -- arrive -- everyone else heard it, it heard nobody.
+        -- Answer, so the sender learns about us too. Without this a client that
+        -- has just /reloaded has an empty peer list and stays that way until
+        -- traffic happens to arrive -- everyone else heard it, it heard nobody.
         --
-        -- Only when the peer is NEW: answering a peer we already knew would have
-        -- them answer us back, forever. The jitter is so that N clients that all
-        -- heard the same `H` do not all reply in the same frame; the debounce
-        -- then folds a burst of new peers into a single message.
-        if isNew then ns.AnnounceSoon(0.5 + math.random() * 1.5) end
+        -- Only while we are quiet (see ShouldAnswerHello), which is what keeps two
+        -- clients from answering each other forever. The jitter is so that N
+        -- clients that all heard the same `H` do not reply in the same frame; the
+        -- debounce then folds their own burst into a single message.
+        if ShouldAnswerHello(isNew) then ns.AnnounceSoon(0.5 + math.random() * 1.5) end
 
     elseif kind == "Q" then
         local qid = ns.ValidQuestID(f3)

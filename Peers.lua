@@ -33,10 +33,9 @@ ns.peers = {}
 
 -- key is the peer's bare name; see ns.BaseName.
 --
--- The second return value is what lets Protocol answer a presence announcement
--- exactly once: only the call that CREATES the entry reports true, so an `H` from
--- somebody we already knew can never trigger a reply, and two clients cannot
--- ping-pong announcements at each other.
+-- The second return value says whether this call CREATED the entry. Protocol uses
+-- it as its fallback rule for answering a presence announcement on a client with
+-- no usable clock, where it cannot measure how long it has been quiet.
 ---@param key string           bare name, from ns.BaseName
 ---@param displayName string?  sender as it arrived
 ---@param compatible boolean

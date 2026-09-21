@@ -126,8 +126,8 @@ buried:
   Messages are never sent to a public channel and never leave your group.
 - **When:**
   - A presence announcement is sent **automatically** when you enter the world, on
-    group roster changes, and in reply to a group member you had not heard from
-    before. Bursts are coalesced, so it is at most one message every few seconds.
+    group roster changes, and in reply to another member's announcement if you have
+    not sent one recently. Bursts are coalesced into one message every few seconds.
   - A completion answer is sent **automatically** whenever any group member asks
     (their `/qt`, or them simply opening a quest). You are not prompted.
 - **Control: there is none yet.** v0.0.2 has no settings. The only way to stop

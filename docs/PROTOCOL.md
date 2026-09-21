@@ -26,7 +26,7 @@ first two-client test has as little in it to go wrong as possible.
 
 | Message | Direction | Meaning |
 |---|---|---|
-| `2\|H` | broadcast | Presence announcement. Sent on `PLAYER_ENTERING_WORLD` and on roster change while grouped — **debounced**, see below — and immediately by `/qt ping`. **Replied to with an `H` of our own, but only when the sender was not already a known peer.** |
+| `2\|H` | broadcast | Presence announcement. Sent on `PLAYER_ENTERING_WORLD` and on roster change while grouped — **debounced**, see below — and immediately by `/qt ping`. **Replied to with an `H` of our own, but only by a client that has itself been quiet.** |
 | `2\|Q\|<questID>` | broadcast | "Have you completed this quest?" One quest per message. |
 | `2\|A\|<questID>\|<status>` | broadcast | Answer. `status`: `0` = not completed, `1` = completed, `2` = not completed but in my log right now ("on it"). |
 
@@ -59,15 +59,16 @@ Behaviour that is part of the contract:
   online and zone changes all raise it — so the first event opens a window, every event
   inside it is absorbed, and one `H` goes out when the window closes. `/qt ping` is
   manual and bypasses the window.
-- **An `H` from an unknown peer is answered, once.** A client with an empty peer list —
-  after a `/reload`, say — fills back in from the answers, rather than staying blind
-  until somebody types. It still learns nothing until someone announces, so a peer that
-  already knows us and sees no roster event of its own will not help it (`B10` in
-  [`TESTING.md`](TESTING.md#b-two-client-round-trip--the-m0-gate) measures this). The
-  reply waits a random 0.5–2 s (so N clients do not answer in the same frame) and then
-  goes through the same debounce, so a burst of new peers still costs one message. An
-  `H` from a peer we already knew is **never** answered — that is what stops two clients
-  answering each other forever. Incompatible-revision peers are not answered either.
+- **An `H` is answered by whoever has been quiet.** "Quiet" means we have not announced
+  in the last `ns.ANNOUNCE_QUIET` = 10 s. This is what gives a client with an empty peer
+  list — after a `/reload`, say — its peers back: it announces on entering the world,
+  every quiet member answers, and it hears them, with nobody typing anything. The reply
+  waits a random 0.5–2 s (so N clients do not answer in the same frame) and then goes
+  through the same debounce, so several answers from one client still cost one message.
+  **It cannot loop**, because answering is itself an announcement: having replied we are
+  no longer quiet, so the reply to our reply is ignored and a chain is at most one round.
+  (The quiet window must stay comfortably above the debounce plus the jitter, or a late
+  answer could restart the chain.) Incompatible-revision peers are not answered.
   Receivers do nothing new with an `H`, so this is not a wire-format change and the
   revision stays at 2.
 

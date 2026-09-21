@@ -47,6 +47,7 @@ local ADDON_NAME, ns = ...
 ---@field PROTOCOL integer
 ---@field REPLY_WINDOW number
 ---@field ANNOUNCE_DEBOUNCE number
+---@field ANNOUNCE_QUIET number
 ---@field tracing boolean
 
 ---@cast ns QT.Namespace
