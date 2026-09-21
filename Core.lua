@@ -59,6 +59,10 @@ f:SetScript("OnEvent", function(_, event, arg1, arg2, arg3, arg4)
         pcall(ns.HandleAddonMessage, arg1, arg2, arg3, arg4)
 
     elseif event == "PLAYER_ENTERING_WORLD" or event == "GROUP_ROSTER_UPDATE" then
+        -- Drop anyone who has left before re-announcing, so a stale answer cannot
+        -- outlive the group membership it came from (docs/ARCHITECTURE.md D2).
+        ns.PrunePeers()
+
         -- Re-announce on every roster change. State, not events: we do not try
         -- to track who joined when, we just make sure everyone eventually hears
         -- us. (docs/PROTOCOL.md, "Sync state, not events".)

@@ -35,6 +35,12 @@ Behaviour that is part of the contract:
 - **Every inbound message marks its sender as a peer**, whatever its type. A message
   whose first field is not `2` marks the peer *incompatible* and is otherwise ignored:
   not parsed, not answered.
+- **A quest ID must be a positive integer below `2^31`.** `0`, negatives, fractions,
+  `inf`/`NaN` and out-of-range values are ignored — on inbound `Q` and `A` alike, and
+  by `/qt ask`. Zero is the sharp one: the oracle answers `false` for it rather than
+  raising ([measured](MEASUREMENTS.md#getinfo--measured-schema-on-the-live-client)),
+  so an unvalidated `0` would broadcast a confident "not completed" for something
+  that is not a quest. Validation is `ns.ValidQuestID`.
 - **A peer that cannot answer stays silent.** If the completion oracle returns
   anything but a plain boolean, no `A` is sent and the asker keeps showing `?`.
 - **Answers are broadcast and everyone records them**, including members who did not
@@ -44,6 +50,10 @@ Behaviour that is part of the contract:
   not answered are reported as `?`, never as "no".
 - **Peers are keyed by bare character name** (realm stripped). This collides for two
   same-named characters from different realms and is tracked as a bug ([Q7](MEASUREMENTS.md#open-questions)).
+- **A peer's answers live only as long as they stay in the group.** On every roster
+  change, anyone no longer in the group is dropped (`ns.PrunePeers`), so a cached
+  answer cannot outlive the membership it came from. If the roster cannot be read at
+  all, nobody is dropped — unknown is never "no", applied to the roster too.
 
 Not in revision 2: batching, `seq` correlation, throttling, coalescing, quest-log
 sync, and any reply to `H`.

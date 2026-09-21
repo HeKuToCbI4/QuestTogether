@@ -43,6 +43,10 @@ end
 ---@return string? err   set only when ok is false
 function ns.Ask(questID)
     if not questID then return false, "no quest" end
+    -- Validate first: an invalid ID must not reach the wire, and askedQuest must
+    -- not be set by an ask that never left the machine.
+    questID = ns.ValidQuestID(questID)
+    if not questID then return false, "invalid quest ID" end
     askedQuest = questID
     local ok, err = ns.Send(ns.PROTOCOL .. "|Q|" .. questID)
     if not ok then return false, err end

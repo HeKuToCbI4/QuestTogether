@@ -284,9 +284,11 @@ ns.peers = {                  -- session-scoped, in Peers.lua
 ```
 
 Differences from the target that matter: there are **no settings** (so no privacy
-toggles), peers are keyed by bare name rather than GUID, there is no `log` dataset and
-no `pending` table, and **entries are never dropped** when a peer leaves the group —
-[D2](#key-architectural-decisions) is not implemented yet.
+toggles), peers are keyed by bare name rather than GUID, and there is no `log` dataset
+and no `pending` table. Entries *are* dropped when a peer leaves the group — `ns.PrunePeers`
+on every roster change — so [D2](#key-architectural-decisions) holds for the leaving half
+of the case. A peer who completes quests *while still in the group* is still cached
+until they leave.
 
 ### Target (v1)
 

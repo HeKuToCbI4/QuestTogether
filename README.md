@@ -37,12 +37,12 @@ What you see for a group member:
 | Peer running the addon, no answer (yet, or timed out) | `?  (no answer)` | `?` with a "no response" hint |
 | Peer on an incompatible protocol revision | `?  (incompatible addon version)` | same, with an "outdated" hint |
 | Peer **not** running the addon | **Not listed at all** — the popup only knows peers it has heard from | Listed as `?` |
-| Peer who has left the group | Still listed until `/reload` | Dropped on roster change |
+| Peer who has left the group | Dropped on roster change | same |
 | You're solo | Popup shows your own state only | same |
 
-The last two gaps (members without the addon, members who left) are tracked as
-issues. Until they are fixed, a group member missing from the popup means "no addon
-heard from" — **not** "no".
+One gap remains — a member without the addon is not listed at all; it is tracked as
+an issue. A group member missing from the popup therefore means "no addon heard
+from" — **not** "no".
 
 ---
 

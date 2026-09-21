@@ -25,6 +25,7 @@ Run after every change, before anything else.
 | A8 | A quest you **have** completed vs one you have **not** | `You: yes - already completed` / `You: no - has not completed it` respectively. |
 | A9 | `/qt events`, accept a quest, `/qt events` | Trace lines for `QUEST_ACCEPTED` etc. with their arguments. **Record the `QUEST_ACCEPTED` arguments** — this closes "Still unverified" item 1. |
 | A10 | `/qt frames` | A yes/NO line per frame name. Record it (feeds Q5). |
+| A11 | `/qt ask 0`, `/qt ask 1.5`, `/qt ask -3` | `Cannot ask: invalid quest ID` — rejected before anything is sent. `/qt ask 92460` while solo still reads `Cannot ask: not in a group`, so the guard did not swallow valid IDs. |
 
 ---
 
@@ -72,9 +73,12 @@ Several are **known to fail today**; the expected column is the target.
 |---|---|---|---|
 | C1 | B has the addon disabled | B shown as `?` | B is not listed at all; popup may read `(not in a group)` |
 | C2 | B on a different `ns.PROTOCOL` (edit the constant locally) | `?  (incompatible addon version)`; B's queries unanswered | Expected to work |
-| C3 | B leaves the group | B disappears from A's popup | B stays listed until `/reload` |
+| C3 | B leaves the group | B disappears from A's popup and from `/qt status` | Dropped on roster change |
 | C4 | B turns the quest in after answering "no" | A's next ask shows "yes" | Works only on a **re-ask**; the cached "no" stays until then |
 | C5 | A opens the same quest twice | One ask, not two | Deduped by quest ID — but never re-asked for a member who joined later |
 | C6 | Rapid clicking through 5+ quests | No disconnect, no missing answers | No throttle exists — observe and record |
 | C7 | Instance / LFG group | Round-trip works | `INSTANCE_CHAT` is not handled — expected to fail |
 | C8 | Cross-realm peer with the **same character name** as another peer, or as you | Distinct entries | Collide (keyed by bare name) |
+| C9 | A peer sends a zero, fractional, negative or out-of-range quest ID | Ignored silently: no answer is sent for it, nothing is cached for it | Expected to work |
+| C10 | B leaves, then A re-ask about the same quest | B is `?` again, never a stale `yes`/`no` from before they left | Expected to work |
+| C11 | Both clients change zone at the same time | Peers may briefly read `?`, then fill back in as every client re-announces on `PLAYER_ENTERING_WORLD` | Expected to work |

@@ -59,7 +59,8 @@ Milestones, the M0 go/no-go gate, risk register and testing strategy.
 - [ ] `HELLO` / `LOGS` handling and roster tracking. *Partial:* presence (`H`) only;
       peers are never dropped.
 - [ ] Peer panel showing "who's on it" for the quest you're viewing.
-- [ ] Graceful handling of peers joining and leaving mid-session.
+- [x] Graceful handling of peers joining and leaving mid-session. *(Leaving: `ns.PrunePeers`
+      on roster change. Joining: the first message from a peer marks them.)*
 
 ### M3 — Completion query protocol · ~2 days
 
@@ -81,8 +82,9 @@ Milestones, the M0 go/no-go gate, risk register and testing strategy.
 ### M5 — Hardening and release · ~2 days
 
 - [x] `pcall` discipline on every inbound message handler — malformed input from a
-      peer must never produce a Lua error in *your* session. (Field *validation* is
-      still incomplete: quest IDs are not checked for integer / `> 0`.)
+      peer must never produce a Lua error in *your* session. Field validation now
+      covers quest IDs (`ns.ValidQuestID`: positive integer below `2^31`); `status`
+      and `rev` were already checked.
 - [ ] SavedVariables settings persistence with schema migration.
 - [ ] Localisation scaffolding (`enUS` first).
 - [ ] Full bug sweep with two live clients.

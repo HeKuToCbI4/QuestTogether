@@ -4,6 +4,17 @@ Version numbers follow the `## Version` field of `QuestTogether.toc`.
 
 ## Unreleased
 
+### Fixed
+- Quest IDs from another client are validated before use: `0`, negatives, fractions,
+  `inf`/`NaN` and values above `2^31` are ignored instead of reaching the completion
+  oracle or the peer cache — on inbound `Q`/`A` and on `/qt ask` alike. Zero was the
+  sharp one: the oracle answers `false` for it rather than raising, so an unvalidated
+  `0` broadcast a confident "not completed" for something that is not a quest.
+- Peers are dropped when they leave the group (decision D2), so a cached answer can no
+  longer outlive the group membership it came from. `/qt status` and the panel stop
+  listing members who are gone. When the roster cannot be read at all, nobody is
+  dropped — unknown is never "no", applied to the roster too.
+
 ### Documentation
 - README now separates what works today from what is planned, and the Privacy
   section describes the actual behaviour (automatic presence announcements and

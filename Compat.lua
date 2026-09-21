@@ -133,6 +133,47 @@ function ns.GroupChannel()
     return nil
 end
 
+-- Bare names of everyone in the group, INCLUDING the player, for the roster walk
+-- in Peers.lua. Returns nil when the roster cannot be read at all -- and a caller
+-- must NOT read that as "nobody is in the group", or one transient API failure
+-- would drop every peer. Unknown is never "no", applied to the roster too.
+--
+-- UnitName returns name, realm; only the first is kept, because peers are keyed
+-- by bare name (ns.BaseName). GetNumGroupMembers counts the player, and this
+-- client is not confirmed to agree -- both conventions are handled below.
+---@return table<string, true>? names
+function ns.GroupMemberNames()
+    local countFn = _G.GetNumGroupMembers
+    local nameFn  = _G.UnitName
+    if not countFn or not nameFn then return nil end
+
+    local ok, count = pcall(countFn)
+    if not ok or type(count) ~= "number" or count < 0 then return nil end
+    if count == 0 then return {} end   -- definitely alone: the group is empty
+
+    local prefix, last
+    if _G.IsInRaid and _G.IsInRaid() then
+        prefix, last = "raid", math.min(count, 40)
+    else
+        prefix, last = "party", math.min(count - 1, 4)   -- the player is counted separately
+    end
+
+    local names = {}
+    local okSelf, self = pcall(nameFn, "player")
+    if okSelf then
+        local key = ns.BaseName(self)
+        if key then names[key] = true end
+    end
+    for i = 1, last do
+        local okUnit, unit = pcall(nameFn, prefix .. i)
+        if okUnit then
+            local key = ns.BaseName(unit)
+            if key then names[key] = true end
+        end
+    end
+    return names
+end
+
 ------------------------------------------------------------------------------
 -- The completion oracle
 ------------------------------------------------------------------------------

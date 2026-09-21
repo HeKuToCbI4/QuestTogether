@@ -20,9 +20,10 @@ peers[key].onIt[questID] is a secondary flag set only alongside a confirmed
 `false`: it marks "this peer has the quest in their log right now" (rendered as
 "on it now"). It never upgrades an unknown into a definite answer.
 
-NOTE (v0.2): dropping entries when a peer leaves is not implemented yet. For now
-a peer persists for the session, which is correct-but-stale in the narrow case
-where they complete quests after answering.
+Entries are dropped by ns.PrunePeers when the roster changes -- Core calls it on
+every GROUP_ROSTER_UPDATE and PLAYER_ENTERING_WORLD. A peer's answers therefore
+live exactly as long as they stay in the group, and a stale answer cannot outlive
+the session it came from (D2).
 ------------------------------------------------------------------------------]]
 
 local ADDON_NAME, ns = ...
@@ -45,6 +46,27 @@ function ns.MarkPeer(key, displayName, compatible)
     p.compatible = compatible
     p.lastSeen   = _G.time and _G.time() or 0
     return p
+end
+
+-- Drop every peer who is no longer in the group. This enforces D2: an answer is
+-- trusted only while they stay in the group, because they may have completed
+-- quests since and we would have no way to know. Dropping is the honest response
+-- -- keeping a stale "no" is the failure this addon exists to prevent.
+--
+-- Deletion lives here, beside the single writer, so the registry keeps one owner.
+-- Called by Core on every roster change.
+---@return integer dropped
+function ns.PrunePeers()
+    local members = ns.GroupMemberNames()
+    if not members then return 0 end   -- cannot read the roster: drop nobody
+    local dropped = 0
+    for key in pairs(ns.peers) do
+        if not members[key] then
+            ns.peers[key] = nil
+            dropped = dropped + 1
+        end
+    end
+    return dropped
 end
 
 -- The ONLY writer of an answer. Everything else only reads.

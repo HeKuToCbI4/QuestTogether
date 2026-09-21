@@ -22,6 +22,33 @@ ns.PREFIX       = "QTOG"
 ns.PROTOCOL     = 2
 ns.REPLY_WINDOW = 3   -- seconds to wait for peers before calling them unknown
 
+-- Every quest ID we touch arrives from another client, so it is hostile input
+-- (CLAUDE.md rule 5). `tonumber` alone is not a validator: it happily turns 0,
+-- negatives, fractions and inf/NaN into numbers, any of which would then reach
+-- the oracle and the peer cache. Zero is the dangerous one --
+-- docs/MEASUREMENTS.md records IsQuestFlaggedCompleted(0) answering `false`
+-- rather than raising, so an unvalidated 0 broadcasts "not completed" for
+-- something that is not a quest at all.
+--
+-- The bound is a sanity limit, not a claim about the quest ID space: a large but
+-- in-range value (1e9, say) is accepted, because rejecting it would buy nothing
+-- and could refuse a legitimate future ID.
+--
+-- A rejected ID is ignored in silence: the asker keeps showing "?", which is the
+-- honest answer. Inventing a reply on their behalf would be worse than saying
+-- nothing.
+local MAX_QUEST_ID = 2 ^ 31 - 1
+
+---@param v any
+---@return integer? id   nil when v is not a usable quest ID
+function ns.ValidQuestID(v)
+    local id = tonumber(v)
+    if not id then return nil end
+    if id % 1 ~= 0 then return nil end                     -- fractions, NaN, +/-inf
+    if id <= 0 or id > MAX_QUEST_ID then return nil end
+    return id
+end
+
 -- ns.onAnswer is declared in Compat.lua and installed by Commands.lua. Protocol
 -- only ever reads it. Keeps presentation out of the transport: Protocol reports
 -- the fact, whoever cares decides what to show.
@@ -84,7 +111,7 @@ function ns.HandleAddonMessage(prefix, text, channel, sender)
     if not compatible then return end
 
     if kind == "Q" then
-        local qid = tonumber(f3)
+        local qid = ns.ValidQuestID(f3)
         if not qid then return end
         local done = ns.SafeIsDone(qid)
         if done == nil then return end   -- stay silent; the asker keeps showing "?"
@@ -102,7 +129,7 @@ function ns.HandleAddonMessage(prefix, text, channel, sender)
         ns.Send(ns.PROTOCOL .. "|A|" .. qid .. "|" .. status, channel)
 
     elseif kind == "A" then
-        local qid = tonumber(f3)
+        local qid = ns.ValidQuestID(f3)
         local status = tonumber(f4)
         if not qid or status == nil then return end
         if status ~= 0 and status ~= 1 and status ~= 2 then return end
