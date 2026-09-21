@@ -203,9 +203,15 @@ QuestTogether/
 │   ├── ROADMAP.md       # milestones M0-M5, risks R1-R11, testing strategy
 │   ├── MEASUREMENTS.md  # live-client measurements, open questions Q1-Q7, API sheet
 │   └── TESTING.md       # manual test checklists (incl. the two-client M0 gate)
+├── tests/               # offline suite: `lua5.1 tests/run.lua`, no dependencies
+│   ├── harness.lua      # a fake WoW client; loads the modules in .toc order
+│   ├── run.lua          # discovers test_*.lua, runs them, exits non-zero on failure
+│   └── test_*.lua       # parser, tri-state invariant, revisions, answers, dispatch
 └── tools/
     └── linkcheck.py     # verifies markdown links and anchors
 ```
+
+`tests/` is not listed in the `.toc`, so the client never loads it.
 
 ### Load order
 

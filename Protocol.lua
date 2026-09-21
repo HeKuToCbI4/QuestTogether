@@ -13,6 +13,11 @@ Wire format v2 -- ASCII, '|' delimited, first field is the protocol revision:
 Deliberately small. Batched queries, the bitfield codec and the LOGS state sync
 all arrive with v0.2 -- the first two-client test should have as little to go
 wrong in it as possible.
+
+Receiving is split in two: ns.ParseMessage is PURE (text in, table or nil out --
+no client API, no state, no side effects) and ns.HandleAddonMessage is a thin
+dispatcher that decides what to do with the result. That split is what lets the
+offline suite in tests/ feed hostile payloads at the format without a client.
 ------------------------------------------------------------------------------]]
 
 local ADDON_NAME, ns = ...
@@ -88,6 +93,88 @@ function ns.Announce()
     return ns.Send(ns.PROTOCOL .. "|H")
 end
 
+------------------------------------------------------------------------------
+-- Parsing -- pure
+------------------------------------------------------------------------------
+
+-- Nothing longer than this can be one of our messages, so it is dropped before
+-- it reaches the parser or the peer registry.
+local MAX_MESSAGE_LEN = 200
+
+-- Split on '|' with plain string functions instead of the WoW `strsplit` global,
+-- so that ns.ParseMessage stays pure Lua and runs outside the client. The
+-- semantics are strsplit's: "2|" gives { "2", "" }, and "" gives { "" }.
+---@param text string
+---@return string[] fields
+local function SplitFields(text)
+    local out, from = {}, 1
+    while true do
+        local at = string.find(text, "|", from, true)
+        if not at then
+            out[#out + 1] = string.sub(text, from)
+            return out
+        end
+        out[#out + 1] = string.sub(text, from, at - 1)
+        from = at + 1
+    end
+end
+
+-- The revision field on its own. The dispatcher needs it even for a message
+-- ns.ParseMessage rejects, because an unknown revision still marks the peer.
+---@param text string
+---@return string rev
+local function RevisionField(text)
+    return (string.match(text, "^([^|]*)"))
+end
+
+---@class QT.Message
+---@field rev integer                 always ns.PROTOCOL; other revisions do not parse
+---@field kind "H"|"Q"|"A"
+---@field questID integer?            set for "Q" and "A"
+---@field status QT.AnswerStatus?     set for "A"
+
+-- PURE: text in, table or nil out. No client API, no state, no side effects --
+-- which is what makes the wire format testable offline (tests/test_parser.lua).
+--
+-- nil means "nothing we can safely act on", and the caller's only correct
+-- response is silence. That covers a non-string, an oversized payload, a
+-- revision we do not speak, an unknown kind, a quest ID that fails
+-- ns.ValidQuestID, and a status outside 0/1/2.
+--
+-- Trailing fields beyond the ones a kind defines are ignored rather than
+-- rejected, which is what the client has always done.
+---@param text any            untrusted: it comes from another client
+---@return QT.Message? msg    nil for anything malformed
+function ns.ParseMessage(text)
+    if type(text) ~= "string" then return nil end
+    if #text > MAX_MESSAGE_LEN then return nil end
+
+    local f = SplitFields(text)
+    if f[1] ~= tostring(ns.PROTOCOL) then return nil end
+
+    local kind = f[2]
+    if kind == "H" then
+        return { rev = ns.PROTOCOL, kind = "H" }
+    end
+
+    if kind == "Q" or kind == "A" then
+        local questID = ns.ValidQuestID(f[3])
+        if not questID then return nil end
+        if kind == "Q" then
+            return { rev = ns.PROTOCOL, kind = "Q", questID = questID }
+        end
+        local status = tonumber(f[4])
+        if status ~= 0 and status ~= 1 and status ~= 2 then return nil end
+        return { rev = ns.PROTOCOL, kind = "A", questID = questID, status = status }
+    end
+
+    return nil
+end
+
+------------------------------------------------------------------------------
+-- Dispatch
+------------------------------------------------------------------------------
+
 -- Inbound. Core calls this inside pcall: a malformed payload from any peer must
 -- never throw inside our own session.
 ---@param prefix any    untrusted: every argument comes from another client
@@ -96,24 +183,23 @@ end
 ---@param sender any
 function ns.HandleAddonMessage(prefix, text, channel, sender)
     if prefix ~= ns.PREFIX then return end
-    if type(text) ~= "string" or #text > 200 then return end
+    if type(text) ~= "string" or #text > MAX_MESSAGE_LEN then return end
 
     local key = ns.BaseName(sender)
     if not key or key == (_G.UnitName and _G.UnitName("player")) then return end
 
-    local rev, kind, f3, f4 = strsplit("|", text)
-
     -- An unknown revision: remember them, mark them incompatible, and skip. We
     -- cannot safely parse a format we do not know, and guessing risks sending a
     -- reply they would misread. Marking beats answering.
-    local compatible = (rev == tostring(ns.PROTOCOL))
+    local compatible = (RevisionField(text) == tostring(ns.PROTOCOL))
     ns.MarkPeer(key, sender, compatible)
     if not compatible then return end
 
-    if kind == "Q" then
-        local qid = ns.ValidQuestID(f3)
-        if not qid then return end
-        local done = ns.SafeIsDone(qid)
+    local msg = ns.ParseMessage(text)
+    if not msg then return end
+
+    if msg.kind == "Q" then
+        local done = ns.SafeIsDone(msg.questID)
         if done == nil then return end   -- stay silent; the asker keeps showing "?"
 
         -- status: 1 = completed, 2 = on it now, 0 = neither. "On it" is cheap
@@ -123,18 +209,14 @@ function ns.HandleAddonMessage(prefix, text, channel, sender)
         if done then
             status = 1
         elseif ns.api.logIdxForId then
-            local ok, idx = pcall(ns.api.logIdxForId, qid)
+            local ok, idx = pcall(ns.api.logIdxForId, msg.questID)
             if ok and idx then status = 2 end
         end
-        ns.Send(ns.PROTOCOL .. "|A|" .. qid .. "|" .. status, channel)
+        ns.Send(ns.PROTOCOL .. "|A|" .. msg.questID .. "|" .. status, channel)
 
-    elseif kind == "A" then
-        local qid = ns.ValidQuestID(f3)
-        local status = tonumber(f4)
-        if not qid or status == nil then return end
-        if status ~= 0 and status ~= 1 and status ~= 2 then return end
-        local peer = ns.RecordAnswer(key, qid, status)
-        if ns.onAnswer then ns.onAnswer(peer, qid, status) end
+    elseif msg.kind == "A" then
+        local peer = ns.RecordAnswer(key, msg.questID, msg.status)
+        if ns.onAnswer then ns.onAnswer(peer, msg.questID, msg.status) end
     end
     -- "H" needs no handling: MarkPeer above already recorded the peer.
 end

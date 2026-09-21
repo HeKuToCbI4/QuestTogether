@@ -52,16 +52,23 @@ When docs and code disagree about current behaviour, the code wins — then fix 
 
 ## Checking your work
 
-You cannot run the addon: there is no WoW client here, and no unit tests yet.
+You cannot run the addon — there is no WoW client here — but the pure parts run
+offline.
 
 ```bash
+lua5.1 tests/run.lua         # offline test suite; stock Lua, no dependencies
 luacheck .                   # static analysis; config in .luacheckrc
 python tools/linkcheck.py    # markdown links and #anchors
 ```
 
-Both run in CI (`.github/workflows/lint.yml`). If `luacheck` is not installed
-locally, say so rather than claiming the check passed. `luac -p` is *not* a
-substitute: it cannot see the forward-reference bug class (see R11 in the roadmap).
+All three run in CI (`.github/workflows/lint.yml`). If `lua5.1` or `luacheck` is
+not installed locally, say so rather than claiming the check passed. `luac -p` is
+*not* a substitute for `luacheck`: it cannot see the forward-reference bug class
+(see R11 in the roadmap).
+
+The suite fakes the client (`tests/harness.lua`) and loads the real modules in
+`.toc` order, so it covers the wire format, the tri-state invariant and hostile
+input — but not the client itself. It cannot tell you an API exists.
 
 Anything behavioural needs a human in the game. When you change behaviour, name the
 rows of `docs/TESTING.md` that must be re-run, and add rows for new behaviour.

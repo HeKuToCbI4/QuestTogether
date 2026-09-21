@@ -1,8 +1,10 @@
 # Manual testing
 
-There are no automated tests yet (see [testing strategy](ROADMAP.md#testing-strategy)).
-These checklists are the test suite. Record results — including the date, client
-build and any surprising output — in [`MEASUREMENTS.md`](MEASUREMENTS.md#measurements-and-open-questions).
+The offline suite (`lua5.1 tests/run.lua`) covers the wire format, the tri-state
+invariant and hostile input — see [testing strategy](ROADMAP.md#testing-strategy).
+Everything below is what it cannot reach: the client itself. Run these by hand and
+record the results — including the date, client build and any surprising output —
+in [`MEASUREMENTS.md`](MEASUREMENTS.md#measurements-and-open-questions).
 
 Expected chat lines are prefixed with `Quest Together` in green; that prefix is
 omitted below.

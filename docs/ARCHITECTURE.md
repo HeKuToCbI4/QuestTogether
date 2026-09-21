@@ -143,7 +143,7 @@ one area cannot ripple into another.
 |---|---|---|
 | `Compat.lua` | Client interface | API resolution, `IsSecret`, `SafeStr`, `SafeIsDone`, `LocalQuestID`, `GroupChannel` |
 | `Peers.lua` | Data layer | The `peers` registry and `RecordAnswer` — **home of the tri-state invariant** |
-| `Protocol.lua` | Transport layer | `PREFIX`, message grammar, `Send`, `HandleAddonMessage`, prefix registration |
+| `Protocol.lua` | Transport layer | `PREFIX`, message grammar, `Send`, `ParseMessage` (pure), `HandleAddonMessage`, prefix registration |
 | `Commands.lua` | UI layer (text) | `ns.Ask`, `/qt ask`, `/qt ping`, `/qt status` |
 | `Diagnostics.lua` | — | Solo verification commands, and (for now) `/qt help`. **Almost deletable** — see below. |
 | `UI.lua` | UI layer (panel) | The status popup, quest-frame show/hide hook, auto-ask on `QUEST_DETAIL` |

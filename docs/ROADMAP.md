@@ -69,7 +69,7 @@ Milestones, the M0 go/no-go gate, risk register and testing strategy.
       the single-quest revision-2 `Q` / `A` exchange with a 3-second reply window.
 - [ ] Request coalescing and the sliding-window throttle.
 - [x] The tri-state cache, including the "never write `false` from absence" invariant
-      — `ns.RecordAnswer`. (Its unit test is still owed.)
+      — `ns.RecordAnswer`, with its unit test in `tests/test_tristate.lua`.
 - [x] `/qt status` debug output.
 
 ### M4 — UI integration · ~2.5 days
@@ -126,31 +126,45 @@ declared. It is configured in `.luacheckrc` and runs in CI (`.github/workflows/l
 
 **Resolved 2026-09-21 — for static checks.** Earlier the modules were only
 parse-checked with a machine-local `luac -p`, which is not reproducible and does not
-cover the bug class above. `luacheck` in CI replaces it. What remains uncovered is
-runtime behaviour: there are still no unit tests, so the cross-module "call only at
-runtime" rule and the manual checklists in [`TESTING.md`](TESTING.md) carry that weight.
+cover the bug class above. `luacheck` in CI replaces it.
+
+**Largely resolved — for runtime behaviour too.** `lua5.1 tests/run.lua` loads every
+module in `.toc` order against a fake client and exercises the receive path, so the
+cross-module "call only at runtime" rule is now checked by something other than a
+`/reload`: a load-time call into another module fails the suite. What the suite
+still cannot see is the client itself — whether an API exists, what an event
+carries, whether a message crosses between two clients. That is what
+[`TESTING.md`](TESTING.md) is for.
 
 ---
 
 ## Testing strategy
 
-> **Status: Planned.** No automated tests exist yet, and `/qt test` is not
-> implemented. What exists today is Layer 4 as a written manual checklist:
-> [`docs/TESTING.md`](TESTING.md).
+> **Status: Partially implemented.** Layers 1 and 3 run offline in CI
+> (`lua5.1 tests/run.lua`). Layer 2 is unnecessary for what the suite already
+> reaches — `/qt test` is not implemented and may never need to be. Layer 4 is
+> the written manual checklist in [`docs/TESTING.md`](TESTING.md).
 
-**Layer 1 — Pure functions, offline.** The codec is the most bug-prone component and
-the easiest to test. `packBits`/`packIDs` get round-trip property tests plus
-hand-computed vectors, including edge cases: empty set, single ID, deltas crossing
-varint boundaries, and a full 64-value alphabet cycle.
+**Layer 1 — Pure functions, offline.** *Implemented for the revision-2 format.*
+`ns.ParseMessage` is pure (text in, table or nil out) and is covered by
+`tests/test_parser.lua`. `tests/harness.lua` fakes the client and loads the real
+modules in `.toc` order, so the tri-state invariant and the answering rules are
+tested through the real receive path too.
+
+The codec is still the most bug-prone component ahead and the easiest to test.
+`packBits`/`packIDs` get round-trip property tests plus hand-computed vectors,
+including edge cases: empty set, single ID, deltas crossing varint boundaries, and
+a full 64-value alphabet cycle. Write them test-first on top of the harness.
 
 **Layer 2 — In-game unit harness.** A `/qt test` entry point runs assertions against
 a mocked peer table and prints a pass/fail summary. Covers the tri-state cache
 invariants, sequence correlation, and timeout expiry.
 
-**Layer 3 — Protocol hardening.** Feed malformed, truncated, oversized, and
-adversarial payloads into the receive dispatcher. **Success criterion: no Lua error,
-ever** — every handler wrapped in `pcall`, every field validated before use. A
-malicious or buggy peer must not be able to break your client.
+**Layer 3 — Protocol hardening.** *Implemented:* `tests/test_dispatch.lua` feeds
+malformed, truncated, oversized and adversarial payloads into the receive
+dispatcher. **Success criterion: no Lua error, ever** — every handler wrapped in
+`pcall`, every field validated before use. A malicious or buggy peer must not be
+able to break your client.
 
 **Layer 4 — Two-client manual test.** Two accounts, grouped, live realm. The only
 way to validate the throttle, coalescing, and roster-change behaviour meaningfully.
