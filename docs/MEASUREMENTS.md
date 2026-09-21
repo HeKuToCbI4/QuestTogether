@@ -148,7 +148,29 @@ one that matters: it must print an existing constant and `channel we would use:
 INSTANCE_CHAT`. If the constant is absent, find the name this client uses before
 relying on the branch.
 
-**3. Everything requiring two grouped clients.** Every run so far has been solo
+**3. What `SendAddonMessage` returns here.** The call's *result* was ignored until
+now — "it did not throw" was read as "it was sent". Older clients return a boolean;
+newer ones return an `Enum.SendAddonMessageResult` code where `0` is success and
+non-zero means throttled, invalid channel, not in a group, and so on. **Which of the
+two this client does is unmeasured**, and `Enum.SendAddonMessageResult` may not exist
+at all.
+
+`/qt sendtest` measures it: it calls the raw API with a presence payload and prints
+every return value, its type, and the count of values returned. Run it three ways and
+record all three:
+
+| Run | What to record |
+|---|---|
+| Solo | The result of a send that *cannot* have gone out — the failure shape. |
+| Grouped | The result of a send that *did* go out — the success shape. |
+| Grouped, ~10 times in a row | Whether a result changes under spam — a throttle. |
+
+Until this is recorded, `ns.Send` reads the result conservatively: only an explicit
+`false` or a non-zero number is a failure; `true`, `0`, `nil` and anything
+unrecognised are success. The spam run also feeds [Q4](#open-questions) (rate
+limiting), which is the other half of the same question.
+
+**4. Everything requiring two grouped clients.** Every run so far has been solo
 (`channel : no (solo)`). The addon-message round-trip, group identity under the secret
 rules, and cross-client quest queries all remain open.
 
@@ -162,7 +184,7 @@ rules, and cross-client quest queries all remain open.
 | Q1 | Correct `## Interface` value? | **Closed** | `16001`. Version `1.60.1` packs as major/minor/patch → `16001`. There was never a conflict; the version string simply does not describe the API generation. |
 | Q2 | Which directory does Forever load addons from? | Open | The addon loaded, so the folder in use is correct — record which one that was before writing install instructions. |
 | Q3 | Does a native party-quest-progress API exist? | **Closed — negative** | `GetQuestPartyProgress`, `QuestHasPartyProgress` and `GetQuestLogPartyMembers` are all absent. No native support, so nothing is duplicated. |
-| Q4 | Are addon messages rate-limited differently here? | Open | **The remaining gate.** Needs two grouped clients. |
+| Q4 | Are addon messages rate-limited differently here? | Open | **The remaining gate.** Needs two grouped clients. `/qt sendtest`, run repeatedly while grouped, is the instrument: a throttle should show up as a changed return value (see "Still unverified" item 2). |
 | Q5 | Do quest frame objects keep Mainline names and structure? | Open | M4 |
 | Q6 | Does the default quest log already show party progress? | **Effectively closed** | No backing API exists ([Q3](#open-questions)), and UI cannot show what no API provides. Confirm visually while grouped. |
 | Q7 | Is `name-realm` a stable peer key? | Open — narrowed | The code now keys by full normalised `Name-Realm` (`ns.PeerKey`), instead of the bare name that made two realms collide. Two things are still **unmeasured** on this client: whether `GetNormalizedRealmName` exists (the code falls back to a bare key if not), and what realm suffix `CHAT_MSG_ADDON` actually puts on `sender` for a same-realm and a cross-realm peer. Record both in the two-client test ([TESTING.md §B](TESTING.md#b-two-client-round-trip--the-m0-gate), "Observations"). |

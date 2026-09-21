@@ -95,6 +95,55 @@ function ns.RegisterPrefix()
     return registered
 end
 
+-- Enum.SendAddonMessageResult maps NAME -> code. Walk it backwards for a name to
+-- put in an error message. The table is NOT measured on this client, so its
+-- absence is normal and everything here is guarded.
+---@param code number
+---@return string? name   nil when the table is absent or holds no such code
+local function ResultName(code)
+    local enum = _G.Enum
+    local t = enum and enum.SendAddonMessageResult
+    if type(t) ~= "table" then return nil end
+    local ok, name = pcall(function()
+        for k, v in pairs(t) do
+            if v == code then return k end
+        end
+        return nil
+    end)
+    if ok and type(name) == "string" then return name end
+    return nil
+end
+
+-- What SendAddonMessage returns on this client is UNVERIFIED (docs/MEASUREMENTS.md,
+-- "Still unverified"; /qt sendtest measures it). Older builds return a boolean;
+-- newer ones return an Enum.SendAddonMessageResult code where 0 means success.
+-- Until a human settles it, the result is read CONSERVATIVELY -- only the two
+-- shapes that mean failure under EITHER convention are failures, so an unknown
+-- convention can never turn a working send into a reported failure:
+--
+--   result                verdict
+--   --------------------  ---------------------------------------------------
+--   false                 failure -- "send refused"
+--   a number ~= 0         failure -- the code, named via Enum when possible
+--   true                  success
+--   0                     success (Enum's success code)
+--   nil / no return       success (the call simply returned nothing)
+--   a secret value        success -- never compared (CLAUDE.md rule 5)
+--   anything else         success
+--
+-- The last line is the point: anything we do not recognise is success, which is
+-- exactly what this function did before it read the result at all.
+---@param result any     whatever ns.api.send returned
+---@return string? err   nil unless the result unambiguously means failure
+local function SendFailure(result)
+    if ns.IsSecret(result) then return nil end
+    if result == false then return "send refused" end
+    if type(result) == "number" and result ~= 0 then
+        return "send refused (" .. (ResultName(result) or ("code " .. result)) .. ")"
+    end
+    return nil
+end
+
 ---@param payload string
 ---@param channel? string   defaults to ns.GroupChannel()
 ---@return boolean ok
@@ -103,8 +152,10 @@ function ns.Send(payload, channel)
     channel = channel or ns.GroupChannel()
     if not channel then return false, "not in a group" end
     if not ns.api.send then return false, "no SendAddonMessage API" end
-    local ok, err = pcall(ns.api.send, ns.PREFIX, payload, channel)
-    if not ok then return false, tostring(err) end
+    local ok, res = pcall(ns.api.send, ns.PREFIX, payload, channel)
+    if not ok then return false, tostring(res) end
+    local err = SendFailure(res)
+    if err then return false, err end
     return true
 end
 

@@ -45,6 +45,13 @@ Version numbers follow the `## Version` field of `QuestTogether.toc`.
   where they reached nobody. The category constant this depends on has **not been
   verified on this client**, so the lookup is guarded — when it is missing, behaviour
   is unchanged. `/qt channel` is a new solo probe that measures it.
+- A refused send is no longer reported as a successful ask. `ns.Send` now reads what
+  `SendAddonMessage` returns instead of assuming that "it did not throw" means "it was
+  sent", so `/qt ask` says `Cannot ask: send refused` and does not start the 3-second
+  summary timer for a question nobody was asked. The client's return convention is
+  still unmeasured, so the reading is deliberately conservative: only an explicit
+  `false` or a non-zero result code counts as failure — `true`, `0` and anything
+  unrecognised stay success, because a wrong guess here would break working sends.
 - Quest IDs from another client are validated before use: `0`, negatives, fractions,
   `inf`/`NaN` and values above `2^31` are ignored instead of reaching the completion
   oracle or the peer cache — on inbound `Q`/`A` and on `/qt ask` alike. Zero was the
@@ -85,6 +92,10 @@ Version numbers follow the `## Version` field of `QuestTogether.toc`.
   tri-state invariant, the answering rules and hostile input. Stock Lua only — no
   luarocks, no busted. To make it possible, the receive path was split into a pure
   `ns.ParseMessage` and a thin dispatcher; behaviour is unchanged.
+- New probe `/qt sendtest`: calls the raw send API with a presence payload and prints
+  every value it returns, with the count and each type, plus
+  `Enum.SendAddonMessageResult` if that table exists. Run it solo and grouped to settle
+  the return convention and to look for a throttle (Q4).
 - `CLAUDE.md`, `.luacheckrc`, `.luarc.json`, `.gitignore`, `tools/linkcheck.py` and a
   GitHub Actions workflow running luacheck, the test suite and the link check.
 - LuaLS type annotations on the public `ns` API (comments only).

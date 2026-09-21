@@ -30,6 +30,7 @@ Run after every change, before anything else.
 | A11 | `/qt ask 0`, `/qt ask 1.5`, `/qt ask -3` | `Cannot ask: invalid quest ID` — rejected before anything is sent. `/qt ask 92460` while solo still reads `Cannot ask: not in a group`, so the guard did not swallow valid IDs. |
 | A12 | `/dump GetNormalizedRealmName()` | **Record the result.** A realm string means peer keys are full `Name-Realm`; `nil` or an error means the API is absent and keys fall back to the bare name (still correct, just no better than before). Feeds [Q7](MEASUREMENTS.md#open-questions). |
 | A13 | `/qt channel` while solo | A block of probe lines. `channel we would use:  nil` (solo). **Record whether `LE_PARTY_CATEGORY_INSTANCE` or `Enum.PartyCategory.Instance` exists and its value** — this is the measurement the instance-group fix is waiting on ("Still unverified" item 2). No Lua error even when the constant is absent. |
+| A14 | `/qt sendtest` while solo | Says whether `Enum.SendAddonMessageResult` exists (and lists it if so), then prints the count, value and type of everything the raw send returned. **Record the whole output** — this is the solo half of "Still unverified" item 3 in [`MEASUREMENTS.md`](MEASUREMENTS.md#still-unverified). No Lua error, whatever it prints. |
 
 ---
 
@@ -76,6 +77,12 @@ close Q4 if nothing looked throttled, and update R3.
   peer is shown as `Name-Realm`. (feeds Q7)
 - Whether `/qt status` on A shows cached answers growing on a third client C that
   never asked (passive caching via broadcast replies).
+- **`/qt sendtest` while grouped** — run it once, then about ten times in a row.
+  Record the count, value and type it prints each time, and whether the value
+  changes under the spam. That is the grouped half of "Still unverified" item 3 in
+  [`MEASUREMENTS.md`](MEASUREMENTS.md#still-unverified) and the evidence for
+  [Q4](MEASUREMENTS.md#open-questions). Compare it with the solo output from A14:
+  the two together say which return convention this client uses.
 
 ---
 
