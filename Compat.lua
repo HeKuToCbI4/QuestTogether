@@ -14,11 +14,18 @@ The fallbacks below are therefore dead code on this client. They are kept becaus
 the surface may still shift -- but this is a recorded measurement, not a hedge.
 
 Also home to the primitives every other module assumes: the secret-value guard,
-the safe formatter, and Print.
+the safe formatter, Print, the one peer-key function (ns.PeerKey) -- and the two
+registries (answer listeners, help lines) through which the other modules announce
+themselves. Peer identity lives here precisely because every module has to agree on
+it -- two key-building rules would silently split the registry in half.
 
 Load-order note: modules communicate through `ns` and must only ever CALL each
 other at runtime, never during load. A cross-module call at load time is the
-same forward-reference trap that crashed v0.1.
+same forward-reference trap that crashed v0.1. Registering into the lists below
+is the one sanctioned exception: this file is first in the .toc, so the lists
+exist before anyone adds to them, and registering only appends a value -- it
+never runs another module's behaviour. That is what lets every OTHER file be
+reordered or deleted without breaking anything.
 ------------------------------------------------------------------------------]]
 
 local ADDON_NAME, ns = ...
@@ -32,17 +39,27 @@ local ADDON_NAME, ns = ...
 ---| 2 # not completed, but in their quest log right now ("on it")
 
 ---@class QT.Peer
----@field name string                        display name as the sender arrived ("Name" or "Name-Realm")
+---@field name string                        display name: bare on our realm, "Name-Realm" across realms
 ---@field compatible boolean                 their protocol revision equals ns.PROTOCOL
 ---@field lastSeen number                    time() of their last message
 ---@field answered table<number, boolean>    questID -> completed; ABSENT KEY == UNKNOWN, never false
 ---@field onIt table<number, boolean>        questID -> true; only ever set alongside answered == false
 
+---@class QT.HelpLine
+---@field cmd string                         the command as typed, e.g. "/qt ping"
+---@field text string                        one short line of description
+---@field group string?                      optional heading; ungrouped lines print first
+---@class QT.GroupMember
+---@field key string                         peer key, from ns.PeerKey
+---@field display string                     name to show the user
+---@field isPlayer boolean                   true for the local player's own row
+
 ---@class QT.Namespace
 ---@field api table<string, function?>       resolved client API; any entry may be nil
----@field peers table<string, QT.Peer>       keyed by bare character name (see ns.BaseName)
+---@field peers table<string, QT.Peer>       keyed by normalised "Name-Realm" (see ns.PeerKey)
 ---@field commands table<string, fun(rest: string)>
----@field onAnswer? fun(peer: QT.Peer?, questID: number, status: QT.AnswerStatus)
+---@field answerListeners (fun(peer: QT.Peer?, questID: number, status: QT.AnswerStatus))[]
+---@field helpLines QT.HelpLine[]
 ---@field PREFIX string
 ---@field PROTOCOL integer
 ---@field REPLY_WINDOW number
@@ -66,25 +83,58 @@ ns.api = {
     logIdxForId = C_QuestLog and C_QuestLog.GetLogIndexForQuestID,
 }
 
--- Shared hooks. Declared HERE, in the first-loaded module, so that no later
--- module has to initialise them -- a module that assigns `ns.onAnswer = nil` at
--- load would clobber whoever set it first, making load order load-bearing.
+------------------------------------------------------------------------------
+-- Registries
 --
--- ns.onAnswer: set by Commands.lua, called by Protocol.lua when a peer answers.
-ns.onAnswer = nil
+-- Two lists any module may add itself to. They live HERE, in the first-loaded
+-- module, so that the list a module registers into always exists already.
+--
+-- They replace the old wrap chains (`ns.onAnswer`, `ns.commands.help`), where a
+-- file wrapped whatever the previous file had set. A wrap silently captured nil
+-- if the files were listed the other way round, so the .toc order quietly
+-- decided whether the addon worked. With registries, every file but this one can
+-- be moved or deleted freely; registering is a definition, not a call into
+-- another module's behaviour.
+------------------------------------------------------------------------------
 
--- Whole namespaces, so Diagnostics can probe a surface without this file
--- having to enumerate every member of it. Currently unused: the probes that read
--- it (/qt env) were retired 2026-09-21. Kept for the next surface to measure.
-ns.namespaces = {
-    C_ChatInfo   = C_ChatInfo,
-    C_QuestLog   = C_QuestLog,
-    C_GossipInfo = rawget(_G, "C_GossipInfo"),
-}
+-- Called by Protocol.lua when a peer answers, in registration order, each inside
+-- its own pcall: one broken listener must not stop the rest.
+ns.answerListeners = ns.answerListeners or {}
+
+---@param fn fun(peer: QT.Peer?, questID: number, status: QT.AnswerStatus)
+function ns.OnAnswer(fn)
+    if type(fn) ~= "function" then return end
+    ns.answerListeners[#ns.answerListeners + 1] = fn
+end
+
+-- /qt help is assembled from whatever modules are present. Each module registers
+-- the commands IT owns, so deleting a file takes its help lines with it and
+-- leaves the rest of the list intact.
+ns.helpLines = ns.helpLines or {}
+
+---@param cmd string      the command as typed, e.g. "/qt ping"
+---@param text string     one short line of description
+---@param group string?   optional heading; ungrouped lines print first
+function ns.AddHelp(cmd, text, group)
+    if type(cmd) ~= "string" or type(text) ~= "string" then return end
+    ns.helpLines[#ns.helpLines + 1] = { cmd = cmd, text = text, group = group }
+end
 
 ------------------------------------------------------------------------------
 -- Primitives
 ------------------------------------------------------------------------------
+
+-- The addon's version, read from the .toc rather than repeated in the source.
+-- Presence-guarded both ways, and nil when the client offers neither API -- the
+-- help header then simply has no version in it, which beats printing a wrong one.
+---@return string? version   nil when the client exposes no metadata API
+function ns.AddonVersion()
+    local f = (_G.C_AddOns and _G.C_AddOns.GetAddOnMetadata) or _G.GetAddOnMetadata
+    if not f then return nil end
+    local ok, v = pcall(f, ADDON_NAME, "Version")
+    if not ok or type(v) ~= "string" or v == "" then return nil end
+    return v
+end
 
 ---@param msg any
 function ns.Print(msg)
@@ -133,13 +183,88 @@ function ns.Now()
     return v
 end
 
--- Addon-message senders arrive as "Name" or "Name-Realm"; key peers by the bare
--- name so cross-realm and same-realm members compare consistently.
----@param s any           sender as delivered by CHAT_MSG_ADDON
----@return string? key    nil when s is not a string
-function ns.BaseName(s)
-    if type(s) ~= "string" then return nil end
-    return (s:match("^([^%-]+)")) or s
+------------------------------------------------------------------------------
+-- Peer identity
+--
+-- ONE key function, used by every module that touches ns.peers. A peer is keyed
+-- by its full normalised "Name-Realm": the bare name is not an identity, because
+-- two realms can send the same one, and a cross-realm namesake of the local
+-- player would otherwise be mistaken for the player and ignored forever.
+------------------------------------------------------------------------------
+
+-- Resolved lazily and cached: GetNormalizedRealmName can answer nil early in the
+-- login sequence, so a load-time read would cache the wrong thing forever.
+local ownRealm = nil
+
+-- The player's own realm, normalised (spaces stripped), or nil when the client
+-- will not tell us. GetNormalizedRealmName is NOT measured on this client, hence the
+-- guard -- if the API is absent, keys stay bare names, which is no worse than
+-- the behaviour it replaces.
+---@return string? realm
+function ns.OwnRealm()
+    if ownRealm then return ownRealm end
+    local f = _G.GetNormalizedRealmName
+    if not f then return nil end
+    local ok, r = pcall(f)
+    if not ok or type(r) ~= "string" then return nil end
+    r = (r:gsub("%s", ""))
+    if r == "" then return nil end
+    ownRealm = r
+    return ownRealm
+end
+
+-- Build a peer key. Accepts both shapes the client hands us:
+--   * a CHAT_MSG_ADDON sender, "Name" or "Name-Realm"  -> ns.PeerKey(sender)
+--   * UnitName's two returns, realm nil/"" on our realm -> ns.PeerKey(name, realm)
+--
+-- A sender without a realm is on our realm, so the player's own normalised realm
+-- is appended; that is what makes the two shapes comparable. When no realm can be
+-- determined at all, the key is the bare name.
+--
+-- The display name is returned separately and is never the key: same-realm peers
+-- read as "Ana", cross-realm ones as "Ana-OtherRealm", which is what the client
+-- itself shows.
+--
+-- Senders are hostile input (CLAUDE.md rule 5), so type and length are checked.
+---@param name any         character name, or a "Name-Realm" sender string
+---@param realm? any       UnitName's second return; nil or "" means our own realm
+---@return string? key     nil when name is not usable
+---@return string? display nil exactly when key is nil
+function ns.PeerKey(name, realm)
+    if type(name) ~= "string" or #name == 0 or #name > 100 then return nil end
+
+    local base, suffix = name:match("^([^%-]+)%-(.+)$")
+    if not base then base, suffix = name, nil end
+    -- A base that still contains a hyphen never parsed (a leading "-", say), so
+    -- it is not a name. Hostile input is rejected, not patched up.
+    if base:find("-", 1, true) then return nil end
+
+    -- An explicit realm argument wins over a suffix in the name.
+    if type(realm) == "string" and realm ~= "" then suffix = realm end
+    if type(suffix) ~= "string" then suffix = nil end
+    if suffix then
+        suffix = (suffix:gsub("%s", ""))
+        if suffix == "" then suffix = nil end
+    end
+
+    local own = ns.OwnRealm()
+    suffix = suffix or own
+    if not suffix then return base, base end
+    if suffix == own then return base .. "-" .. suffix, base end
+    return base .. "-" .. suffix, base .. "-" .. suffix
+end
+
+-- The local player's own key, for "is this me?" comparisons. nil when the client
+-- cannot name the player -- and a nil must NOT be read as "not me": a caller that
+-- cannot tell should behave as it did before, not guess.
+---@return string? key
+---@return string? display
+function ns.PlayerKey()
+    local f = _G.UnitName
+    if not f then return nil end
+    local ok, name, realm = pcall(f, "player")
+    if not ok then return nil end
+    return ns.PeerKey(name, realm)
 end
 
 ---@return "RAID"|"PARTY"|nil channel   nil when solo
@@ -149,45 +274,51 @@ function ns.GroupChannel()
     return nil
 end
 
--- Bare names of everyone in the group, INCLUDING the player, for the roster walk
--- in Peers.lua. Returns nil when the roster cannot be read at all -- and a caller
--- must NOT read that as "nobody is in the group", or one transient API failure
--- would drop every peer. Unknown is never "no", applied to the roster too.
+-- Everyone in the group, INCLUDING the player (flagged), in roster order. Used
+-- both to prune departed peers (Peers.lua) and to drive the listing, so that a
+-- member without the addon is shown as "?" instead of being invisible.
 --
--- UnitName returns name, realm; only the first is kept, because peers are keyed
--- by bare name (ns.BaseName). GetNumGroupMembers counts the player, and this
--- client is not confirmed to agree -- both conventions are handled below.
----@return table<string, true>? names
-function ns.GroupMemberNames()
+-- Returns nil when the roster cannot be read at all -- and a caller must NOT read
+-- that as "nobody is in the group", or one transient API failure would drop every
+-- peer. Unknown is never "no", applied to the roster too.
+--
+-- GetNumGroupMembers is not confirmed on this client to count the player, so the
+-- unit loop is deliberately bounded by the channel's own maximum rather than by
+-- the count: a unit that does not exist yields no name and is skipped, so
+-- over-scanning is free while under-scanning would hide a real member.
+---@return QT.GroupMember[]? members
+function ns.GroupMembers()
     local countFn = _G.GetNumGroupMembers
     local nameFn  = _G.UnitName
     if not countFn or not nameFn then return nil end
 
     local ok, count = pcall(countFn)
     if not ok or type(count) ~= "number" or count < 0 then return nil end
-    if count == 0 then return {} end   -- definitely alone: the group is empty
+
+    local members, seen = {}, {}
+    local function add(unit, isPlayer)
+        local okUnit, uName, uRealm = pcall(nameFn, unit)
+        if not okUnit then return end
+        local key, display = ns.PeerKey(uName, uRealm)
+        if not key or seen[key] then return end
+        seen[key] = true
+        members[#members + 1] = { key = key, display = display, isPlayer = isPlayer }
+    end
+
+    -- The player first, so the duplicate "raidN" entry for them is skipped.
+    add("player", true)
+    if count == 0 then return members end   -- definitely alone: nobody else to add
 
     local prefix, last
     if _G.IsInRaid and _G.IsInRaid() then
-        prefix, last = "raid", math.min(count, 40)
+        prefix, last = "raid", 40
     else
-        prefix, last = "party", math.min(count - 1, 4)   -- the player is counted separately
-    end
-
-    local names = {}
-    local okSelf, self = pcall(nameFn, "player")
-    if okSelf then
-        local key = ns.BaseName(self)
-        if key then names[key] = true end
+        prefix, last = "party", 4
     end
     for i = 1, last do
-        local okUnit, unit = pcall(nameFn, prefix .. i)
-        if okUnit then
-            local key = ns.BaseName(unit)
-            if key then names[key] = true end
-        end
+        add(prefix .. i, false)
     end
-    return names
+    return members
 end
 
 ------------------------------------------------------------------------------

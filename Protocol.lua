@@ -64,12 +64,12 @@ function ns.ValidQuestID(v)
     return id
 end
 
--- ns.onAnswer is declared in Compat.lua and installed by Commands.lua. Protocol
--- only ever reads it. Keeps presentation out of the transport: Protocol reports
--- the fact, whoever cares decides what to show.
+-- ns.answerListeners is declared in Compat.lua; Query.lua and UI.lua register
+-- into it. Protocol only ever announces the fact that an answer arrived, and
+-- whoever cares decides what to show -- presentation stays out of the transport.
 --
--- Do NOT initialise it here. Assigning `ns.onAnswer = nil` at load would wipe
--- whatever Commands had set, quietly making the .toc's file order load-bearing.
+-- Do NOT initialise the list here: recreating it at load would wipe whatever had
+-- already registered, quietly making the .toc's file order load-bearing again.
 
 local registered = false
 
@@ -194,8 +194,14 @@ function ns.HandleAddonMessage(prefix, text, channel, sender)
     if prefix ~= ns.PREFIX then return end
     if type(text) ~= "string" or #text > 200 then return end
 
-    local key = ns.BaseName(sender)
-    if not key or key == (_G.UnitName and _G.UnitName("player")) then return end
+    -- Identity is the full normalised "Name-Realm" (ns.PeerKey), so a cross-realm
+    -- namesake of ours is a different peer rather than us. When the client cannot
+    -- name the player at all we cannot rule ourselves out -- so we do not try, and
+    -- behave as before rather than guessing.
+    local key, display = ns.PeerKey(sender)
+    if not key then return end
+    local me = ns.PlayerKey()
+    if me and key == me then return end
 
     local rev, kind, f3, f4 = strsplit("|", text)
 
@@ -203,7 +209,7 @@ function ns.HandleAddonMessage(prefix, text, channel, sender)
     -- cannot safely parse a format we do not know, and guessing risks sending a
     -- reply they would misread. Marking beats answering.
     local compatible = (rev == tostring(ns.PROTOCOL))
-    local _, isNew = ns.MarkPeer(key, sender, compatible)
+    local _, isNew = ns.MarkPeer(key, display, compatible)
     if not compatible then return end
 
     if kind == "H" then
@@ -241,6 +247,13 @@ function ns.HandleAddonMessage(prefix, text, channel, sender)
         if not qid or status == nil then return end
         if status ~= 0 and status ~= 1 and status ~= 2 then return end
         local peer = ns.RecordAnswer(key, qid, status)
-        if ns.onAnswer then ns.onAnswer(peer, qid, status) end
+        -- Each listener in its own pcall: a listener that throws must not stop
+        -- the ones after it, and must not break the message handler either.
+        local listeners = ns.answerListeners
+        if listeners then
+            for i = 1, #listeners do
+                pcall(listeners[i], peer, qid, status)
+            end
+        end
     end
 end

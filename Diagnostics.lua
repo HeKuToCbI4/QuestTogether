@@ -1,9 +1,10 @@
 --[[----------------------------------------------------------------------------
 Diagnostics -- in-game verification for the questions still open.
 
-This entire file is meant to be deletable before release. One thing still stands in
-the way: /qt help for EVERY command is defined here (and wrapped by UI.lua), so move
-the help text out first. Nothing else depends on this file.
+This entire file is meant to be deletable before release: delete it, drop its line
+from the .toc, and nothing else changes. Its two commands register into ns.commands
+and their help lines into ns.helpLines, so /qt help simply stops listing them.
+Nothing anywhere depends on this file.
 
 It exists because Forever is a beta client whose API surface and event payloads are
 still moving, and guessing at those from documentation is how ships sink.
@@ -63,19 +64,13 @@ function ns.commands.frames()
 end
 
 ------------------------------------------------------------------------------
--- /qt help
+-- Help, under a heading of its own: these are probes, not everyday commands.
 ------------------------------------------------------------------------------
 
-function ns.commands.help()
-    ns.Print("v0.0.2 -- commands:")
-    ns.Print("  /qt              ask about the quest currently open")
-    ns.Print("  /qt ask <id>     ask about a specific quest ID")
-    ns.Print("  /qt ping         announce yourself to the group")
-    ns.Print("  /qt status       list peers and how much we know")
-    ns.Print("-- still-open probes --")
-    ns.Print("  /qt events       toggle tracing of quest events and their arguments")
-    ns.Print("  /qt frames       list the UI objects M4 would hook")
-end
+local PROBES = "still-open probes"
+
+ns.AddHelp("/qt events", "toggle tracing of quest events and their arguments", PROBES)
+ns.AddHelp("/qt frames", "list the UI objects M4 would hook", PROBES)
 
 ------------------------------------------------------------------------------
 -- Event tracing frame

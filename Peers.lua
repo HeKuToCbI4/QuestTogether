@@ -20,6 +20,14 @@ peers[key].onIt[questID] is a secondary flag set only alongside a confirmed
 `false`: it marks "this peer has the quest in their log right now" (rendered as
 "on it now"). It never upgrades an unknown into a definite answer.
 
+Peers are keyed by their full normalised "Name-Realm" (ns.PeerKey, in Compat.lua).
+The bare name is not an identity: two realms can send the same one, and a
+cross-realm namesake of the local player would be mistaken for the player.
+
+ns.PeerLines joins the group roster against this registry so that every surface
+lists the whole group -- a member without the addon reads "?  (no addon heard
+from)" instead of being absent. It is display only and writes nothing.
+
 Entries are dropped by ns.PrunePeers when the roster changes -- Core calls it on
 every GROUP_ROSTER_UPDATE and PLAYER_ENTERING_WORLD. A peer's answers therefore
 live exactly as long as they stay in the group, and a stale answer cannot outlive
@@ -31,13 +39,13 @@ local ADDON_NAME, ns = ...
 
 ns.peers = {}
 
--- key is the peer's bare name; see ns.BaseName.
+-- key is the peer's full normalised "Name-Realm"; see ns.PeerKey.
 --
 -- The second return value says whether this call CREATED the entry. Protocol uses
 -- it as its fallback rule for answering a presence announcement on a client with
 -- no usable clock, where it cannot measure how long it has been quiet.
----@param key string           bare name, from ns.BaseName
----@param displayName string?  sender as it arrived
+---@param key string           peer key, from ns.PeerKey
+---@param displayName string?  name to show the user, from ns.PeerKey
 ---@param compatible boolean
 ---@return QT.Peer
 ---@return boolean isNew   true only when this call created the entry
@@ -63,11 +71,13 @@ end
 -- Called by Core on every roster change.
 ---@return integer dropped
 function ns.PrunePeers()
-    local members = ns.GroupMemberNames()
+    local members = ns.GroupMembers()
     if not members then return 0 end   -- cannot read the roster: drop nobody
+    local inGroup = {}
+    for _, m in ipairs(members) do inGroup[m.key] = true end
     local dropped = 0
     for key in pairs(ns.peers) do
-        if not members[key] then
+        if not inGroup[key] then
             ns.peers[key] = nil
             dropped = dropped + 1
         end
@@ -112,4 +122,38 @@ function ns.DescribePeerState(peer, questID)
     -- Absent means we never got an answer. Rendering that as "no" is the single
     -- mistake this addon exists to prevent.
     return "?  (no answer)"
+end
+
+-- The list every surface shows: the GROUP ROSTER joined against the registry, so
+-- that a member we have never heard from appears as "?  (no addon heard from)"
+-- rather than being invisible. The distinction matters -- "no addon" and "has the
+-- addon but did not answer" are different facts and are worded differently.
+--
+-- DISPLAY ONLY. Nothing here writes to peer.answered or peer.onIt; ns.RecordAnswer
+-- remains the single writer.
+--
+-- When the roster cannot be read, falls back to listing the peers we have heard
+-- from, exactly as before. A roster we cannot read is unknown, not empty -- and an
+-- unknown member is never invented as a "no".
+---@param questID number
+---@return {display: string, state: string}[] rows   may be empty
+---@return boolean fromRoster                        false when the roster was unreadable
+function ns.PeerLines(questID)
+    local rows = {}
+    local members = ns.GroupMembers()
+    if members then
+        for _, m in ipairs(members) do
+            if not m.isPlayer then
+                local p = ns.peers[m.key]
+                local state = "?  (no addon heard from)"
+                if p then state = ns.DescribePeerState(p, questID) end
+                rows[#rows + 1] = { display = m.display, state = state }
+            end
+        end
+        return rows, true
+    end
+    for _, p in pairs(ns.peers) do
+        rows[#rows + 1] = { display = p.name, state = ns.DescribePeerState(p, questID) }
+    end
+    return rows, false
 end
