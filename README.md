@@ -111,6 +111,7 @@ Solo verification tools — these run with one client and nobody else online:
 |---|---|
 | `/qt events` | Toggle tracing of quest events and their arguments |
 | `/qt frames` | List the UI objects M4 would hook |
+| `/qt channel` | Probe instance-group detection and the channel messages would use |
 
 For a `/qt` you typed, answers print live as they arrive, then a summary follows
 after 3 seconds; the automatic ask when you open a quest prints nothing at all.

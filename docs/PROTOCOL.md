@@ -13,9 +13,13 @@ The implemented revision-2 protocol, and the planned batched revision 3.
 ### Transport — *Implemented*
 
 - **Prefix:** `QTOG`, registered once via `C_ChatInfo.RegisterAddonMessagePrefix`.
-- **Channel:** `"PARTY"` when in a party, `"RAID"` when in a raid. Replies go back
-  on the channel the request arrived on. (`"INSTANCE_CHAT"` for instance groups is
-  not handled yet.)
+- **Channel:** `"INSTANCE_CHAT"` when in an instance (LFG) group, otherwise `"RAID"`
+  when in a raid and `"PARTY"` when in a party. Replies go back on the channel the
+  request arrived on. The instance case is *implemented but unverified on the live
+  client*: the category constant it depends on has not been seen on Forever, so the
+  lookup is guarded and falls back to today's `"RAID"` / `"PARTY"` behaviour when it
+  is missing. Measure it with `/qt channel`
+  ([still unverified](MEASUREMENTS.md#still-unverified)).
 - **Payload:** ASCII, `|`-delimited fields, first field is the protocol revision.
 - **Maximum:** inbound payloads over 200 characters are dropped unparsed.
 

@@ -15,6 +15,8 @@ What remains probes the questions still open:
 
   * /qt events -- what arguments quest events actually carry (still unverified)
   * /qt frames -- which Mainline UI frames exist, for M4's hooks
+  * /qt channel -- whether this client knows instance (LFG) groups, and which
+    channel ns.GroupChannel would pick right now (still unverified)
 
 It owns its own event frame for quest-event tracing, so Core never learns that
 tracing exists. Sharing Core's frame would make this file undeletable.
@@ -64,6 +66,44 @@ function ns.commands.frames()
 end
 
 ------------------------------------------------------------------------------
+-- /qt channel -- does this client know instance (LFG) groups?
+--
+-- Runs solo. The useful reading is taken three times -- alone, in a normal party
+-- and in an LFG group -- and recorded in docs/MEASUREMENTS.md. Nothing here
+-- assumes the constant exists; every line reports what was actually found.
+------------------------------------------------------------------------------
+
+local function Call(fn, ...)
+    if not fn then return "no such API" end
+    local ok, res = pcall(fn, ...)
+    if not ok then return "ERROR: " .. ns.SafeStr(res) end
+    return ns.SafeStr(res)
+end
+
+function ns.commands.channel()
+    local constant = _G.LE_PARTY_CATEGORY_INSTANCE
+    local enum     = _G.Enum
+    local enumTbl  = enum and enum.PartyCategory
+    local viaEnum  = type(enumTbl) == "table" and enumTbl.Instance or nil
+    local category = ns.InstancePartyCategory()
+
+    ns.Print("group channel probe:")
+    ns.Print(("  LE_PARTY_CATEGORY_INSTANCE   %-3s  value = %s"):format(ns.yn(constant ~= nil), ns.SafeStr(constant)))
+    ns.Print(("  Enum.PartyCategory.Instance  %-3s  value = %s"):format(ns.yn(viaEnum ~= nil), ns.SafeStr(viaEnum)))
+    ns.Print(("  IsInGroup                    %-3s"):format(ns.yn(_G.IsInGroup)))
+    ns.Print(("  IsInRaid                     %-3s"):format(ns.yn(_G.IsInRaid)))
+
+    if category == nil then
+        ns.Print("  IsInGroup(<instance>)  ->  not called: no instance category found")
+    else
+        ns.Print(("  IsInGroup(%s)  ->  %s"):format(ns.SafeStr(category), Call(_G.IsInGroup, category)))
+    end
+    ns.Print("  IsInGroup()  ->  " .. Call(_G.IsInGroup))
+    ns.Print("  IsInRaid()   ->  " .. Call(_G.IsInRaid))
+    ns.Print("  channel we would use:  " .. ns.SafeStr(ns.GroupChannel()))
+end
+
+------------------------------------------------------------------------------
 -- Help, under a heading of its own: these are probes, not everyday commands.
 ------------------------------------------------------------------------------
 
@@ -71,6 +111,7 @@ local PROBES = "still-open probes"
 
 ns.AddHelp("/qt events", "toggle tracing of quest events and their arguments", PROBES)
 ns.AddHelp("/qt frames", "list the UI objects M4 would hook", PROBES)
+ns.AddHelp("/qt channel", "probe instance-group detection and the channel we would use", PROBES)
 
 ------------------------------------------------------------------------------
 -- Event tracing frame

@@ -29,6 +29,7 @@ Run after every change, before anything else.
 | A10 | `/qt frames` | A yes/NO line per frame name. Record it (feeds Q5). |
 | A11 | `/qt ask 0`, `/qt ask 1.5`, `/qt ask -3` | `Cannot ask: invalid quest ID` — rejected before anything is sent. `/qt ask 92460` while solo still reads `Cannot ask: not in a group`, so the guard did not swallow valid IDs. |
 | A12 | `/dump GetNormalizedRealmName()` | **Record the result.** A realm string means peer keys are full `Name-Realm`; `nil` or an error means the API is absent and keys fall back to the bare name (still correct, just no better than before). Feeds [Q7](MEASUREMENTS.md#open-questions). |
+| A13 | `/qt channel` while solo | A block of probe lines. `channel we would use:  nil` (solo). **Record whether `LE_PARTY_CATEGORY_INSTANCE` or `Enum.PartyCategory.Instance` exists and its value** — this is the measurement the instance-group fix is waiting on ("Still unverified" item 2). No Lua error even when the constant is absent. |
 
 ---
 
@@ -91,7 +92,7 @@ Several are **known to fail today**; the expected column is the target.
 | C4 | B turns the quest in after answering "no" | A's next ask shows "yes" | Works only on a **re-ask**; the cached "no" stays until then |
 | C5 | A opens the same quest twice | One ask, not two | Deduped by quest ID; the dedupe is cleared on every roster change, so a member who joined later is asked the next time the quest is opened |
 | C6 | Rapid clicking through 5+ quests | No disconnect, no missing answers | One query per quest opened, none printed to chat — no throttle on `Q`/`A` exists (only `H` is debounced), so observe and record |
-| C7 | Instance / LFG group | Round-trip works | `INSTANCE_CHAT` is not handled — expected to fail |
+| C7 | Instance / LFG group. Run `/qt channel` in a normal party **and** in the instance group before the round-trip | `/qt channel` prints `PARTY` in the party and `INSTANCE_CHAT` in the instance group; the round-trip then works | `INSTANCE_CHAT` is now chosen — **but the category constant is unverified on this client.** If `/qt channel` reports it absent, the channel stays `PARTY` and the round-trip still fails; record the output in MEASUREMENTS.md |
 | C8 | Cross-realm peer with the **same character name** as another peer, or as you | Distinct entries | Expected to work — keyed by full `Name-Realm` (`ns.PeerKey`). Needs a cross-realm group to confirm |
 | C12 | Grouped, nobody else has the addon | Every member `?  (no addon heard from)` | Expected to work |
 | C13 | Grouped with 4 others, only one has the addon | All four listed; one answers, three read `?  (no addon heard from)` | Expected to work |

@@ -136,7 +136,19 @@ surface needs measuring.
 inferred from a crash's local state rather than observed cleanly. `/qt events` traces
 the real arguments. Cheap to settle; do it before v0.2 relies on it.
 
-**2. Everything requiring two grouped clients.** Every run so far has been solo
+**2. Instance (LFG) groups.** `ns.GroupChannel` now returns `"INSTANCE_CHAT"` when
+`IsInGroup(<instance category>)` is true, but **neither the category constant nor the
+argument form has been seen on this client** — the lookup is guarded, so a miss simply
+leaves the old `"RAID"` / `"PARTY"` behaviour in place. `/qt channel` prints whether
+`LE_PARTY_CATEGORY_INSTANCE` (or `Enum.PartyCategory.Instance`) exists and its value,
+what `IsInGroup(<category>)`, `IsInGroup()` and `IsInRaid()` return, and the channel
+that would be used. Run it **three times** — solo, in a normal party, and inside an
+LFG/dungeon-finder group — and record all three outputs here. The instance run is the
+one that matters: it must print an existing constant and `channel we would use:
+INSTANCE_CHAT`. If the constant is absent, find the name this client uses before
+relying on the branch.
+
+**3. Everything requiring two grouped clients.** Every run so far has been solo
 (`channel : no (solo)`). The addon-message round-trip, group identity under the secret
 rules, and cross-client quest queries all remain open.
 
