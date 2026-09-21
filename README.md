@@ -36,13 +36,15 @@ What you see for a group member:
 | Peer running the addon, answered | `yes` / `no` / `on it now` | ✓ / ✗ / ◈ glyphs |
 | Peer running the addon, no answer (yet, or timed out) | `?  (no answer)` | `?` with a "no response" hint |
 | Peer on an incompatible protocol revision | `?  (incompatible addon version)` | same, with an "outdated" hint |
-| Peer **not** running the addon | **Not listed at all** — the popup only knows peers it has heard from | Listed as `?` |
+| Peer **not** running the addon | `?  (no addon heard from)` | `?` with a "no addon" hint |
 | Peer who has left the group | Dropped on roster change | same |
-| You're solo | Popup shows your own state only | same |
+| Nobody else in the group has the addon | Every member `?`, above the hint "None of your group has Quest Together." | same |
+| You're solo | Popup shows your own state only, under "Not in a group." | same |
 
-One gap remains — a member without the addon is not listed at all; it is tracked as
-an issue. A group member missing from the popup therefore means "no addon heard
-from" — **not** "no".
+The list is driven by the **group roster**, so every member of your group gets a
+line whether or not they run the addon — and each "?" is worded differently, so
+you can always tell *why* an answer is missing. None of them is ever rendered
+as "no".
 
 ---
 
@@ -51,7 +53,8 @@ from" — **not** "no".
 ### Works today (v0.0.2)
 
 - **Status popup beside the quest frame.** Open a quest at an NPC: the popup shows
-  your own completion state (live from the client) and every peer heard from.
+  your own completion state (live from the client) and one line per group member,
+  taken from the roster so that nobody is silently missing.
 - **Auto-ask.** Opening a quest asks the group about it once per quest ID.
 - **Chat output.** Answers print live as they arrive; a summary follows after
   3 seconds.

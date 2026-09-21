@@ -153,7 +153,7 @@ rules, and cross-client quest queries all remain open.
 | Q4 | Are addon messages rate-limited differently here? | Open | **The remaining gate.** Needs two grouped clients. |
 | Q5 | Do quest frame objects keep Mainline names and structure? | Open | M4 |
 | Q6 | Does the default quest log already show party progress? | **Effectively closed** | No backing API exists ([Q3](#open-questions)), and UI cannot show what no API provides. Confirm visually while grouped. |
-| Q7 | Is `name-realm` a stable peer key? | Open | M2. Note the code currently keys by **bare name** (`ns.BaseName` strips the realm), which is strictly worse: same-named characters from two realms collide, and a cross-realm namesake of the local player is ignored as "self". |
+| Q7 | Is `name-realm` a stable peer key? | Open — narrowed | The code now keys by full normalised `Name-Realm` (`ns.PeerKey`), instead of the bare name that made two realms collide. Two things are still **unmeasured** on this client: whether `GetNormalizedRealmName` exists (the code falls back to a bare key if not), and what realm suffix `CHAT_MSG_ADDON` actually puts on `sender` for a same-realm and a cross-realm peer. Record both in the two-client test ([TESTING.md §B](TESTING.md#b-two-client-round-trip--the-m0-gate), "Observations"). |
 
 ---
 

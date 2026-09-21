@@ -24,14 +24,23 @@ ns.onAnswer = function(peer, questID)
     end
 end
 
+-- Driven by the group roster (ns.PeerLines), not by the peers we happen to have
+-- heard from, so a member without the addon is listed as "?" rather than omitted.
 local function Report(questID)
-    if next(ns.peers) == nil then
-        ns.Print("Nobody in your group is running Quest Together.")
+    local rows = ns.PeerLines(questID)
+    if #rows == 0 then
+        -- Nothing to list has two very different causes; ns.GroupChannel tells
+        -- them apart (wording from docs/UX.md).
+        if ns.GroupChannel() then
+            ns.Print("None of your group has Quest Together.")
+        else
+            ns.Print("Not in a group.")
+        end
         return
     end
     ns.Print("Quest " .. questID .. ":")
-    for _, p in pairs(ns.peers) do
-        ns.Print("  " .. p.name .. ": " .. ns.DescribePeerState(p, questID))
+    for _, r in ipairs(rows) do
+        ns.Print("  " .. r.display .. ": " .. r.state)
     end
 end
 
