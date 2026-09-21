@@ -1,0 +1,14 @@
+## Interface: 16001
+## Title: Quest Together
+## Notes: See which of your party members have already completed a quest.
+## Author: HeKuToCbI4
+## Version: 0.0.2
+## SavedVariables: QuestTogetherDB
+
+Compat.lua
+Peers.lua
+Protocol.lua
+Commands.lua
+Diagnostics.lua
+UI.lua
+Core.lua
