@@ -41,7 +41,7 @@ quest `Q2` that B currently has **in their log, uncompleted**.
 
 | # | Step | Expected | If it fails |
 |---|---|---|---|
-| B1 | A invites B; B accepts | On **both** clients: `<other> has the addon.` within a second or two (presence is announced on roster change). | Go to B2 before concluding anything. |
+| B1 | A invites B; B accepts | On **both** clients: `<other> has the addon.` within about five seconds (presence is announced on roster change, debounced by ~3 s, plus up to 2 s of jitter on a reply). | Wait the full five seconds, then go to B2 before concluding anything. |
 | B2 | A: `/qt ping` | A: `Announced to the group…`. B: `<A> has the addon.` (if not already printed). | `Prefix is not registered` → registration failed; record it. No line on B → **the gate has failed**; record exactly what each client printed, then try B2 from B → A. |
 | B3 | Both: `/qt status` | Each lists the other as `compatible  (0 answers cached)`. | |
 | B4 | A: `/qt ask Q1` | A: `Asking your group about quest Q1...`, then a live line `<B>: no - has not completed it` (or `yes - already completed`), then after 3 s the summary with the same answer. | `?  (no answer)` in the summary → B received nothing or could not answer. On B, `/qt status` shows whether B heard A at all. |
@@ -50,6 +50,8 @@ quest `Q2` that B currently has **in their log, uncompleted**.
 | B7 | B: `/qt ask Q1` | B sees A's true state — the reverse direction works. | |
 | B8 | A opens a quest at an NPC | A's popup appears and, without typing anything, fills in B's line (auto-ask). | |
 | B9 | B: `/reload`. Then A: `/qt ask Q1` | B still answers after the reload. | |
+| B10 | B: `/reload`, then **type nothing on either client**. Watch B's chat for ~10 s, then B: `/qt status` | B lists A again without anyone typing: B announces on entering the world, and A answers it because A's own peer list no longer holds B (or because A saw a roster event of its own). | B's list stays empty → A still had B as a known peer, so A stayed silent **by design** (that is what stops a ping-pong), and A's client saw no roster event when B reloaded. Check `/qt ping` on A fills B's list, and **record it**: it means reload recovery still needs a second mechanism. |
+| B11 | With both grouped, cause a burst of roster events (promote/demote B, mark assist, swap subgroups, or invite and remove a third character) as fast as you can for ~10 s | No repeated `<other> has the addon.` lines, no chat spam and no disconnect: the announcements are coalesced to at most one per ~3 s per client. | There is no visible trace of an individual `H`; to watch the coalescing directly, temporarily add an `ns.Print` inside `ns.Announce` and count the lines — there should be far fewer than the number of roster events. |
 
 **Passing B2, B4, B5 and B7 closes the gate.** Tick the last M0 box in [`ROADMAP.md`](ROADMAP.md#milestones),
 close Q4 if nothing looked throttled, and update R3.
@@ -76,9 +78,9 @@ Several are **known to fail today**; the expected column is the target.
 | C3 | B leaves the group | B disappears from A's popup and from `/qt status` | Dropped on roster change |
 | C4 | B turns the quest in after answering "no" | A's next ask shows "yes" | Works only on a **re-ask**; the cached "no" stays until then |
 | C5 | A opens the same quest twice | One ask, not two | Deduped by quest ID — but never re-asked for a member who joined later |
-| C6 | Rapid clicking through 5+ quests | No disconnect, no missing answers | No throttle exists — observe and record |
+| C6 | Rapid clicking through 5+ quests | No disconnect, no missing answers | No throttle on `Q`/`A` exists — only `H` is debounced. Observe and record |
 | C7 | Instance / LFG group | Round-trip works | `INSTANCE_CHAT` is not handled — expected to fail |
 | C8 | Cross-realm peer with the **same character name** as another peer, or as you | Distinct entries | Collide (keyed by bare name) |
 | C9 | A peer sends a zero, fractional, negative or out-of-range quest ID | Ignored silently: no answer is sent for it, nothing is cached for it | Expected to work |
 | C10 | B leaves, then A re-ask about the same quest | B is `?` again, never a stale `yes`/`no` from before they left | Expected to work |
-| C11 | Both clients change zone at the same time | Peers may briefly read `?`, then fill back in as every client re-announces on `PLAYER_ENTERING_WORLD` | Expected to work |
+| C11 | Both clients change zone at the same time | Peers may briefly read `?`, then fill back in within a few seconds as every client re-announces on `PLAYER_ENTERING_WORLD` (debounced) | Expected to work |

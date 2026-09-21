@@ -5,6 +5,16 @@ Version numbers follow the `## Version` field of `QuestTogether.toc`.
 ## Unreleased
 
 ### Fixed
+- Presence announcements (`H`) are debounced: `GROUP_ROSTER_UPDATE` fires far more
+  often than people join or leave, and every one of them used to send a message.
+  A burst now costs one announcement (trailing edge, ~3 s window). `/qt ping` is
+  still immediate.
+- A presence announcement from a group member we had not heard of is answered with
+  our own, after a short random delay. A client whose peer list is empty — after a
+  `/reload`, say — now fills `/qt status` and the popup back in as soon as anyone
+  announces, instead of waiting for somebody to type. A member we already knew is
+  never answered, so clients cannot ping-pong announcements at each other. The wire
+  format is unchanged.
 - Quest IDs from another client are validated before use: `0`, negatives, fractions,
   `inf`/`NaN` and values above `2^31` are ignored instead of reaching the completion
   oracle or the peer cache — on inbound `Q`/`A` and on `/qt ask` alike. Zero was the

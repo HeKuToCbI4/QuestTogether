@@ -32,12 +32,19 @@ local ADDON_NAME, ns = ...
 ns.peers = {}
 
 -- key is the peer's bare name; see ns.BaseName.
+--
+-- The second return value is what lets Protocol answer a presence announcement
+-- exactly once: only the call that CREATES the entry reports true, so an `H` from
+-- somebody we already knew can never trigger a reply, and two clients cannot
+-- ping-pong announcements at each other.
 ---@param key string           bare name, from ns.BaseName
 ---@param displayName string?  sender as it arrived
 ---@param compatible boolean
 ---@return QT.Peer
+---@return boolean isNew   true only when this call created the entry
 function ns.MarkPeer(key, displayName, compatible)
     local p = ns.peers[key]
+    local isNew = (p == nil)
     if not p then
         p = { name = displayName or key, answered = {}, onIt = {} }
         ns.peers[key] = p
@@ -45,7 +52,7 @@ function ns.MarkPeer(key, displayName, compatible)
     end
     p.compatible = compatible
     p.lastSeen   = _G.time and _G.time() or 0
-    return p
+    return p, isNew
 end
 
 -- Drop every peer who is no longer in the group. This enforces D2: an answer is
