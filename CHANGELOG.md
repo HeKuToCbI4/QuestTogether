@@ -5,6 +5,12 @@ Version numbers follow the `## Version` field of `QuestTogether.toc`.
 ## Unreleased
 
 ### Fixed
+- The popup no longer shows a stale answer. Re-opening a quest asks the group again
+  (it used to ask once per quest ID and then trust the cache), and quests that are in
+  progress or ready to turn in are asked about too, not only offered ones. Your own
+  line now says `on it now` when the quest is in your log.
+- `/qt` no longer prints every answer twice. Answers print live; after 3 seconds only
+  the members who did *not* answer are listed, and nothing at all if everybody did.
 - A group member whose name contains a space is now matched correctly. The live
   answer used to be followed by a summary saying `?  (no addon heard from)`, and the
   peer was dropped on every roster change: the roster spells such a name

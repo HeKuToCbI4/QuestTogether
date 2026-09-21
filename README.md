@@ -55,11 +55,11 @@ as "no".
 - **Status popup beside the quest frame.** Open a quest at an NPC: the popup shows
   your own completion state (live from the client) and one line per group member,
   taken from the roster so that nobody is silently missing.
-- **Auto-ask.** Opening a quest asks the group about it, silently — the answers
-  appear in the popup, not in chat. Asked once per quest ID, and again after the
-  group roster changes, so a member who joined late is still asked.
-- **Chat output.** For `/qt` only: answers print live as they arrive, and a summary
-  follows after 3 seconds.
+- **Auto-ask.** Opening a quest — offered, in progress or ready to turn in — asks the
+  group about it, silently: the answers appear in the popup, not in chat. Every
+  opening asks afresh, so the popup shows what is true *now*, not a cached answer.
+- **Chat output.** For `/qt` only: answers print live as they arrive. After 3 seconds
+  the members who did *not* answer are listed — nobody is printed twice.
 - **"On it now".** A peer who has the quest in their log but has not completed it is
   reported separately from a plain "no".
 - **Version check.** Peers on a different protocol revision are marked incompatible
@@ -119,8 +119,8 @@ Solo verification tools — these run with one client and nobody else online:
 | `/qt realm` | Print what the client reports as your name and realm |
 | `/qt roster` | Print how the client spells the other group members (run grouped) |
 
-For a `/qt` you typed, answers print live as they arrive, then a summary follows
-after 3 seconds; the automatic ask when you open a quest prints nothing at all.
+For a `/qt` you typed, answers print live as they arrive; after 3 seconds the members
+who did not answer are listed (nothing, if everybody answered); the automatic ask when you open a quest prints nothing at all.
 Peers that never answer stay `?` — never "no".
 
 ---

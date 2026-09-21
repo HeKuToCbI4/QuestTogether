@@ -149,13 +149,13 @@ function ns.PeerLines(questID)
                 if p then state = ns.DescribePeerState(p, questID) end
                 -- The peer's own message spells a spaced name properly
                 -- ("Itemys Targaryen"); the roster may hand back "Itemys-Targaryen".
-                rows[#rows + 1] = { display = p and p.name or m.display, state = state }
+                rows[#rows + 1] = { display = p and p.name or m.display, state = state, peer = p }
             end
         end
         return rows, true
     end
     for _, p in pairs(ns.peers) do
-        rows[#rows + 1] = { display = p.name, state = ns.DescribePeerState(p, questID) }
+        rows[#rows + 1] = { display = p.name, state = ns.DescribePeerState(p, questID), peer = p }
     end
     return rows, false
 end

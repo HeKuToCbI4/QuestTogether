@@ -69,7 +69,10 @@ end
 local function DescribeSelf(qid)
     local done, why = ns.SafeIsDone(qid)
     if done == true  then return "You: yes - already completed" end
-    if done == false then return "You: no - has not completed it" end
+    if done == false then
+        if ns.SafeInLog(qid) then return "You: on it now" end
+        return "You: no - has not completed it"
+    end
     return "You: ? (oracle: " .. (why or "unknown") .. ")"
 end
 
@@ -137,38 +140,52 @@ end
 -- without a manual /qt. Silent -- the answers land in the panel in front of the
 -- user, and printing them as well meant a burst of chat for every quest opened.
 --
--- Deduped by quest ID so a re-fired QUEST_DETAIL for the same quest does not
--- spam the group; a different quest asks again. The dedupe is cleared on every
--- roster change (below): someone who joined after the last ask has never been
--- asked, and would otherwise stay "?" for as long as that quest stayed open.
--- Solo stays quiet (no group to ask).
-local lastAutoAsk = nil
+-- It fires for every way a quest can be on screen: offered (QUEST_DETAIL), in
+-- progress (QUEST_PROGRESS) and ready to turn in (QUEST_COMPLETE). The dedupe is
+-- also cleared on every roster change (below): someone who joined after the last
+-- ask has never been asked. Solo stays quiet (no group to ask).
+local lastAutoAsk   = nil
+local lastAutoAskAt = 0
+
+-- The dedupe exists for ONE reason: QUEST_DETAIL can fire more than once for a
+-- single opening. It must not outlive that opening -- a cached answer goes stale
+-- the moment the peer accepts or turns in the quest, and re-opening the quest is
+-- how the user asks "and now?". So the same quest is skipped only within a few
+-- seconds. Without a clock (ns.Now() == 0) the old "same as last" rule stands.
+local AUTO_ASK_WINDOW = 5
 
 local function OnQuestOpen()
     ShowPanel()
     local qid = ns.LocalQuestID()
-    if qid and qid ~= lastAutoAsk and ns.GroupChannel() and ns.Ask then
-        lastAutoAsk = qid
-        ns.Ask(qid, true)
-    end
+    if not (qid and ns.GroupChannel() and ns.Ask) then return end
+
+    local now = ns.Now()
+    local repeated = (qid == lastAutoAsk)
+        and (now == 0 or now - lastAutoAskAt < AUTO_ASK_WINDOW)
+    if repeated then return end
+
+    lastAutoAsk, lastAutoAskAt = qid, now
+    ns.Ask(qid, true)
 end
 
 -- Own event frame, so Core never learns about these events (the same discipline
--- as Diagnostics). QUEST_DETAIL fires when a specific quest's detail is shown;
+-- as Diagnostics). The three QUEST_* events each put one quest on screen;
 -- GROUP_ROSTER_UPDATE refreshes the peer list.
 local ev = CreateFrame("Frame")
 ev:RegisterEvent("QUEST_DETAIL")
+ev:RegisterEvent("QUEST_PROGRESS")
+ev:RegisterEvent("QUEST_COMPLETE")
 ev:RegisterEvent("GROUP_ROSTER_UPDATE")
 ev:SetScript("OnEvent", function(_, event)
-    if event == "QUEST_DETAIL" then
+    if event ~= "GROUP_ROSTER_UPDATE" then
         -- Defer one frame: GetQuestID() may not be populated at the exact moment
-        -- QUEST_DETAIL fires, and there is no local Lua to catch a bad read.
+        -- the event fires, and there is no local Lua to catch a bad read.
         if _G.C_Timer and _G.C_Timer.After then
             _G.C_Timer.After(0, OnQuestOpen)
         else
             OnQuestOpen()
         end
-    elseif event == "GROUP_ROSTER_UPDATE" then
+    else
         -- The group changed, so the last auto-ask no longer speaks for it: a
         -- member who joined since has never been asked anything.
         lastAutoAsk = nil

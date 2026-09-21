@@ -5,7 +5,9 @@ One entry point, ns.Ask, used by both /qt and the panel's auto-ask. The two
 differ only in how loud they are, so that is a flag rather than a second path:
 
   * manual (/qt, /qt ask <id>) prints "Asking your group...", a line per answer
-    as it lands, and a summary when the reply window closes.
+    as it lands, and -- when the reply window closes -- a line for each member
+    who did NOT answer. Whoever already got a live line is not printed again;
+    if everybody answered, the window closes in silence.
   * silent (auto-ask, every time a quest is opened) prints nothing at all. The
     popup is already on screen and repaints itself as answers arrive; chat would
     only repeat it, once per quest opened.
@@ -24,12 +26,15 @@ unanswered peer stays unknown rather than becoming a "no".
 local ADDON_NAME, ns = ...
 ---@cast ns QT.Namespace
 
--- questID -> true while a manual ask is waiting for its reply window to close.
--- A silent ask has nothing to report, so it records nothing.
+-- questID -> set of peers already reported live, while a manual ask is waiting
+-- for its reply window to close. A silent ask has nothing to report, so it
+-- records nothing.
+---@type table<number, table<QT.Peer, true>>
 local pending = {}
 
 ---@param questID number
 local function Report(questID)
+    local printed = pending[questID] or {}
     pending[questID] = nil
     -- Driven by the group roster (ns.PeerLines), not by the peers we happen to
     -- have heard from, so a member without the addon is listed as "?" rather
@@ -45,8 +50,16 @@ local function Report(questID)
         end
         return
     end
-    ns.Print("Quest " .. questID .. ":")
+    -- Only the members who have NOT had a live line: repeating the others is the
+    -- same answer twice, three seconds apart. What is left is, by construction,
+    -- the unknowns -- which is exactly what the user still needs to be told.
+    local missing = {}
     for _, r in ipairs(rows) do
+        if not (r.peer and printed[r.peer]) then missing[#missing + 1] = r end
+    end
+    if #missing == 0 then return end
+    ns.Print("Quest " .. questID .. " -- no answer from:")
+    for _, r in ipairs(missing) do
         ns.Print("  " .. r.display .. ": " .. r.state)
     end
 end
@@ -55,7 +68,9 @@ end
 -- during a request is presentation, which is why it lives here and not in the
 -- transport layer.
 ns.OnAnswer(function(peer, questID)
-    if peer and pending[questID] then
+    local printed = pending[questID]
+    if peer and printed then
+        printed[peer] = true
         ns.Print("  " .. peer.name .. ": " .. ns.DescribePeerState(peer, questID))
     end
 end)
@@ -86,7 +101,7 @@ function ns.Ask(questID, silent)
     -- have heard the first one), but the timer already running will report it.
     if alreadyPending then return true end
 
-    pending[questID] = true
+    pending[questID] = {}
     if _G.C_Timer and _G.C_Timer.After then
         _G.C_Timer.After(ns.REPLY_WINDOW, function() Report(questID) end)
     else

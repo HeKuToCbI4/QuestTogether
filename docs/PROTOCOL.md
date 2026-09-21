@@ -50,7 +50,7 @@ Behaviour that is part of the contract:
 - **Answers are broadcast and everyone records them**, including members who did not
   ask (see [below](#the-channel-is-a-broadcast-medium-a-free-optimisation)). There is
   no `seq`; an answer is correlated by quest ID alone.
-- **The asker waits `REPLY_WINDOW` = 3 s** and then prints a summary. Peers that have
+- **The asker waits `REPLY_WINDOW` = 3 s** and then lists whoever has not answered. Peers that have
   not answered are reported as `?`, never as "no".
 - **Peers are keyed by bare character name** (realm stripped). This collides for two
   same-named characters from different realms and is tracked as a bug ([Q7](MEASUREMENTS.md#open-questions)).

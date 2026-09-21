@@ -372,9 +372,8 @@ function ns.HandleAddonMessage(prefix, text, channel, sender)
         local status = 0
         if done then
             status = 1
-        elseif ns.api.logIdxForId then
-            local ok, idx = pcall(ns.api.logIdxForId, msg.questID)
-            if ok and idx then status = 2 end
+        elseif ns.SafeInLog(msg.questID) then
+            status = 2
         end
         ns.Send(ns.PROTOCOL .. "|A|" .. msg.questID .. "|" .. status, channel)
 
