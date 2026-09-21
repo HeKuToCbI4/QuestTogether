@@ -332,7 +332,7 @@ function ns.HandleAddonMessage(prefix, text, channel, sender)
     if prefix ~= ns.PREFIX then return end
     if type(text) ~= "string" or #text > MAX_MESSAGE_LEN then return end
 
-    -- Identity is the full normalised "Name-Realm" (ns.PeerKey), so a cross-realm
+    -- Identity is name AND realm (ns.PeerKey), so a cross-realm
     -- namesake of ours is a different peer rather than us. When the client cannot
     -- name the player at all we cannot rule ourselves out -- so we do not try, and
     -- behave as before rather than guessing.

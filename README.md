@@ -117,6 +117,7 @@ Solo verification tools — these run with one client and nobody else online:
 | `/qt channel` | Probe instance-group detection and the channel messages would use |
 | `/qt sendtest` | Print what `SendAddonMessage` returns here (run solo and grouped) |
 | `/qt realm` | Print what the client reports as your name and realm |
+| `/qt roster` | Print how the client spells the other group members (run grouped) |
 
 For a `/qt` you typed, answers print live as they arrive, then a summary follows
 after 3 seconds; the automatic ask when you open a quest prints nothing at all.
