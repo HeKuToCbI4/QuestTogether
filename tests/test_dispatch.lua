@@ -38,7 +38,8 @@ end)
 h.test("a cross-realm namesake is a different peer, not us", function(_, ns)
     ns.HandleAddonMessage(ns.PREFIX, "2|Q|" .. QUEST, "PARTY", "Tester-Ravencrest")
     h.eq(h.count(ns.peers), 1, "the namesake was recorded as a peer")
-    h.ok(ns.peers["Tester-Ravencrest"], "keyed by the full name")
+    h.ok(ns.peers[ns.PeerKey("Tester-Ravencrest")], "keyed by name and realm")
+    h.isNil(ns.peers[ns.PeerKey("Tester")], "not under our own key")
 end)
 
 -- With our own realm known, a sender carrying that realm IS us. The stub is set

@@ -129,12 +129,12 @@ h.test("an answer from a never-seen sender is recorded (current behaviour)", fun
     h.eq(env.prints[1], "|cff33ff99Quest Together|r Carol has the addon.", "the peer was announced")
 end)
 
-h.test("a cross-realm peer is keyed by their full Name-Realm", function(_, ns)
+h.test("a cross-realm peer is keyed by name and realm", function(_, ns)
     receive(ns, "2|A|" .. QUEST .. "|1", "Carol-Ravencrest")
-    local peer = ns.peers["Carol-Ravencrest"]
-    h.ok(peer, "keyed by the full name")
+    local peer = ns.peers[ns.PeerKey("Carol-Ravencrest")]
+    h.ok(peer, "keyed by name and realm")
     h.eq(peer.name, "Carol-Ravencrest", "display name")
-    h.isNil(ns.peers.Carol, "not keyed by the bare name")
+    h.isNil(ns.peers[ns.PeerKey("Carol")], "not keyed by the bare name")
 end)
 
 h.test("an incompatible peer renders as unknown whatever is cached", function(_, ns)

@@ -56,7 +56,7 @@ local ADDON_NAME, ns = ...
 
 ---@class QT.Namespace
 ---@field api table<string, function?>       resolved client API; any entry may be nil
----@field peers table<string, QT.Peer>       keyed by normalised "Name-Realm" (see ns.PeerKey)
+---@field peers table<string, QT.Peer>       keyed by ns.PeerKey (name + realm, separators dropped)
 ---@field commands table<string, fun(rest: string)>
 ---@field answerListeners (fun(peer: QT.Peer?, questID: number, status: QT.AnswerStatus))[]
 ---@field helpLines QT.HelpLine[]
@@ -187,9 +187,10 @@ end
 -- Peer identity
 --
 -- ONE key function, used by every module that touches ns.peers. A peer is keyed
--- by its full normalised "Name-Realm": the bare name is not an identity, because
--- two realms can send the same one, and a cross-realm namesake of the local
--- player would otherwise be mistaken for the player and ignored forever.
+-- by name AND realm: the bare name is not an identity, because two realms can
+-- send the same one, and a cross-realm namesake of the local player would
+-- otherwise be mistaken for the player and ignored forever. Our own realm is
+-- left out of the key, so a peer on it has one key however the client spells them.
 ------------------------------------------------------------------------------
 
 -- Resolved lazily and cached: GetNormalizedRealmName can answer nil early in the
@@ -217,13 +218,26 @@ end
 --   * a CHAT_MSG_ADDON sender, "Name" or "Name-Realm"  -> ns.PeerKey(sender)
 --   * UnitName's two returns, realm nil/"" on our realm -> ns.PeerKey(name, realm)
 --
--- A sender without a realm is on our realm, so the player's own normalised realm
--- is appended; that is what makes the two shapes comparable. When no realm can be
--- determined at all, the key is the bare name.
+-- MEASURED 2026-09-21 (two clients): names on this client can contain a SPACE
+-- ("Itemys Targaryen"), and the same character then reaches us in two spellings --
+-- the addon-message sender keeps the space, while the group roster hands back
+-- "Itemys-Targaryen", which reads exactly like Name-Realm. No split of that string
+-- can be trusted, so the key does not depend on one:
 --
--- The display name is returned separately and is never the key: same-realm peers
--- read as "Ana", cross-realm ones as "Ana-OtherRealm", which is what the client
--- itself shows.
+--   1. join name and realm, strip whitespace from the realm;
+--   2. cut our OWN realm off the end, if it is there (a peer on our realm must get
+--      the same key whether or not the client spelled the realm out);
+--   3. drop every space and hyphen from what is left.
+--
+--   "Itemys Targaryen-ClassicBetaPvE", "Itemys Targaryen" and "Itemys-Targaryen"
+--   all give "ItemysTargaryen"; "Ana-OtherRealm" and ("Ana", "Other Realm") both
+--   give "AnaOtherRealm".
+--
+-- The price is a theoretical collision ("AnaOther" on our realm vs "Ana" on a realm
+-- called "Other"), accepted because the alternative was a certain mismatch.
+--
+-- The key is an identity, never something to show. The display name is returned
+-- separately and keeps the spelling we were given, minus our own realm.
 --
 -- Senders are hostile input (CLAUDE.md rule 5), so type and length are checked.
 ---@param name any         character name, or a "Name-Realm" sender string
@@ -231,27 +245,30 @@ end
 ---@return string? key     nil when name is not usable
 ---@return string? display nil exactly when key is nil
 function ns.PeerKey(name, realm)
+    -- Secret first: even `#` on a secret value raises.
+    if ns.IsSecret(name) or ns.IsSecret(realm) then return nil end
     if type(name) ~= "string" or #name == 0 or #name > 100 then return nil end
+    -- A name never starts with a separator; "-Realm" is hostile input, not a peer.
+    if name:find("^[%s%-]") then return nil end
 
-    local base, suffix = name:match("^([^%-]+)%-(.+)$")
-    if not base then base, suffix = name, nil end
-    -- A base that still contains a hyphen never parsed (a leading "-", say), so
-    -- it is not a name. Hostile input is rejected, not patched up.
-    if base:find("-", 1, true) then return nil end
-
-    -- An explicit realm argument wins over a suffix in the name.
-    if type(realm) == "string" and realm ~= "" then suffix = realm end
-    if type(suffix) ~= "string" then suffix = nil end
-    if suffix then
-        suffix = (suffix:gsub("%s", ""))
-        if suffix == "" then suffix = nil end
+    local full = name
+    if type(realm) == "string" and realm ~= "" and #realm <= 100 then
+        full = name .. "-" .. (realm:gsub("%s", ""))
     end
 
+    -- Cut our own realm off the end. Plain find, not a pattern: a realm name is
+    -- data, and must not be read as one.
     local own = ns.OwnRealm()
-    suffix = suffix or own
-    if not suffix then return base, base end
-    if suffix == own then return base .. "-" .. suffix, base end
-    return base .. "-" .. suffix, base .. "-" .. suffix
+    if own then
+        local tail = "-" .. own
+        if #full > #tail and full:sub(-#tail) == tail then
+            full = full:sub(1, #full - #tail)
+        end
+    end
+
+    local key = (full:gsub("[%s%-]", ""))
+    if key == "" then return nil end   -- nothing but separators: not a name
+    return key, full
 end
 
 -- The local player's own key, for "is this me?" comparisons. nil when the client

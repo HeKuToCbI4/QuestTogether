@@ -20,7 +20,7 @@ peers[key].onIt[questID] is a secondary flag set only alongside a confirmed
 `false`: it marks "this peer has the quest in their log right now" (rendered as
 "on it now"). It never upgrades an unknown into a definite answer.
 
-Peers are keyed by their full normalised "Name-Realm" (ns.PeerKey, in Compat.lua).
+Peers are keyed by ns.PeerKey (in Compat.lua): name + realm, split-independent.
 The bare name is not an identity: two realms can send the same one, and a
 cross-realm namesake of the local player would be mistaken for the player.
 
@@ -39,7 +39,7 @@ local ADDON_NAME, ns = ...
 
 ns.peers = {}
 
--- key is the peer's full normalised "Name-Realm"; see ns.PeerKey.
+-- key comes from ns.PeerKey, and only from there.
 --
 -- The second return value says whether this call CREATED the entry. Protocol uses
 -- it as its fallback rule for answering a presence announcement on a client with
@@ -147,7 +147,9 @@ function ns.PeerLines(questID)
                 local p = ns.peers[m.key]
                 local state = "?  (no addon heard from)"
                 if p then state = ns.DescribePeerState(p, questID) end
-                rows[#rows + 1] = { display = m.display, state = state }
+                -- The peer's own message spells a spaced name properly
+                -- ("Itemys Targaryen"); the roster may hand back "Itemys-Targaryen".
+                rows[#rows + 1] = { display = p and p.name or m.display, state = state }
             end
         end
         return rows, true

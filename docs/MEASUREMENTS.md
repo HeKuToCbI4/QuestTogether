@@ -159,6 +159,50 @@ What follows from them:
   itself may be missing. So `GetNormalizedRealmName` is *still unmeasured*.
   `/qt realm` replaces it as the instrument.
 
+### Sixth run — two clients, for the first time (2026-09-21)
+
+Two characters on `Classic Beta PvE`, grouped, both on the build with `/qt realm`.
+
+**Addon messages cross between two clients.** Both halves were seen on one client:
+
+```
+Itemys Targaryen joins the party.
+Itemys Targaryen has the addon.                      <- their `H` arrived
+Asking your group about quest 783...
+  Itemys Targaryen: no - has not completed it        <- our `Q` went out, their `A` came back
+```
+
+That is B1, B2 and B4 of [`TESTING.md`](TESTING.md#b-two-client-round-trip--the-m0-gate)
+in one direction. B5 (compare with the truth) and B7 (the reverse direction) were not
+recorded, so the M0 box is **not ticked yet** — but the fatal risk, R3, did not
+materialise.
+
+`/qt realm` on the same client:
+
+| Probe | Result |
+|---|---|
+| `GetRealmName()` | `Classic Beta PvE` |
+| `GetNormalizedRealmName()` | works — our own key came out with the suffix `ClassicBetaPvE` |
+| `UnitName("player")` | `Itemys Targaryen`, `nil` |
+| `UnitFullName("player")` | `Itemys Targaryen`, `ClassicBetaPvE` |
+
+**And a bug the run found ([#24](https://github.com/HeKuToCbI4/QuestTogether/issues/24)).**
+Character names here can contain a **space**. The summary that followed the live line
+above read:
+
+```
+Quest 783:
+  Itemys-Targaryen: ?  (no addon heard from)
+```
+
+Same player, two spellings: the addon-message sender keeps the space, the group roster
+hands back `Itemys-Targaryen` — which parses exactly like `Name-Realm`, so the surname
+became a realm and the two keys never met. It also meant `ns.PrunePeers` dropped the
+peer on every roster change. `ns.PeerKey` no longer depends on where the name is split
+(own realm cut off, then spaces and hyphens dropped). The exact return values of
+`UnitName("partyN")` for such a name, and the raw sender string, are **still
+unmeasured**; `/qt roster` prints both.
+
 ### Still unverified
 
 **1. Event payloads.** `QUEST_ACCEPTED` is believed to pass the quest ID as `arg1` —
@@ -201,8 +245,10 @@ Until this is recorded, `ns.Send` reads the result conservatively: only an expli
 unrecognised are success. The spam run also feeds [Q4](#open-questions) (rate
 limiting), which is the other half of the same question.
 
-**4. Everything requiring two grouped clients.** Every run so far has been solo
-(`channel : no (solo)`). The addon-message round-trip, group identity under the secret
+**4. Everything requiring two grouped clients.** The first grouped run (sixth run)
+showed `H`, `Q` and `A` crossing in one direction. Still owed: the reverse direction,
+the comparison with the truth, `/qt roster`, and grouped `/qt sendtest`. Before that,
+every run had been solo (`channel : no (solo)`). The addon-message round-trip, group identity under the secret
 rules, and cross-client quest queries all remain open.
 
 > **This is the last M0 gate.** Everything else in M0 is closed. The only fatal risk
@@ -218,7 +264,7 @@ rules, and cross-client quest queries all remain open.
 | Q4 | Are addon messages rate-limited differently here? | Open | **The remaining gate.** Needs two grouped clients. `/qt sendtest`, run repeatedly while grouped, is the instrument: a throttle should show up as a changed return value (see "Still unverified" item 2). |
 | Q5 | Do quest frame objects keep Mainline names and structure? | Open | M4 |
 | Q6 | Does the default quest log already show party progress? | **Effectively closed** | No backing API exists ([Q3](#open-questions)), and UI cannot show what no API provides. Confirm visually while grouped. |
-| Q7 | Is `name-realm` a stable peer key? | Open — narrowed | The code now keys by full normalised `Name-Realm` (`ns.PeerKey`), instead of the bare name that made two realms collide. Two things are still **unmeasured** on this client: whether `GetNormalizedRealmName` exists (the code falls back to a bare key if not; `/dump` printed nothing, so `/qt realm` is the instrument — fifth run), and what realm suffix `CHAT_MSG_ADDON` actually puts on `sender` for a same-realm and a cross-realm peer. Record both in the two-client test ([TESTING.md §B](TESTING.md#b-two-client-round-trip--the-m0-gate), "Observations"). |
+| Q7 | Is `name-realm` a stable peer key? | Open — narrowed | **No, not as a split string:** names can contain a space, and the roster then spells them `First-Last`, indistinguishable from `Name-Realm` (sixth run, [#24](https://github.com/HeKuToCbI4/QuestTogether/issues/24)). `ns.PeerKey` now builds a split-independent key from name + realm (own realm cut off, spaces and hyphens dropped), instead of the bare name that made two realms collide. `GetNormalizedRealmName` is confirmed to work. Two things are still **unmeasured** on this client: whether `GetNormalizedRealmName` exists (the code falls back to a bare key if not; `/dump` printed nothing, so `/qt realm` is the instrument — fifth run), and what realm suffix `CHAT_MSG_ADDON` actually puts on `sender` for a same-realm and a cross-realm peer. Record both in the two-client test ([TESTING.md §B](TESTING.md#b-two-client-round-trip--the-m0-gate), "Observations"). |
 
 ---
 

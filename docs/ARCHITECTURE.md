@@ -274,7 +274,8 @@ defensible future feature and an explicit [non-goal](#non-goals) for v1.
 QuestTogetherDB = {}          -- SavedVariable; created empty, nothing reads it yet
 
 ns.peers = {                  -- session-scoped, in Peers.lua
-  ["Name-Realm"] = {          -- key: full normalised Name-Realm -- ns.PeerKey, see Q7
+  ["NameRealm"] = {           -- key: ns.PeerKey -- name + realm, own realm cut off,
+                              -- spaces and hyphens dropped (names can contain a space; Q7)
     name       = "Name",                -- display name; "Name-Realm" cross-realm
     compatible = true,                  -- protocol revision matched ours
     lastSeen   = 0,                     -- time() of the last message

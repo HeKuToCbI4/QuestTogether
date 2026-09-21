@@ -4,6 +4,13 @@ Version numbers follow the `## Version` field of `QuestTogether.toc`.
 
 ## Unreleased
 
+### Fixed
+- A group member whose name contains a space is now matched correctly. The live
+  answer used to be followed by a summary saying `?  (no addon heard from)`, and the
+  peer was dropped on every roster change: the roster spells such a name
+  `First-Last`, which was read as `Name-Realm`. Peer keys no longer depend on where
+  a name is split (#24). New probe `/qt roster` prints the spellings the client uses.
+
 ### Measured on the live client (2026-09-21)
 - The addon loads from `_classic_beta_\Interface\AddOns\` — install instructions in the
   README are now definite (Q2 closed).

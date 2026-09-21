@@ -19,6 +19,8 @@ What remains probes the questions still open:
     channel ns.GroupChannel would pick right now (still unverified)
   * /qt sendtest -- what SendAddonMessage returns here (feeds Q4)
   * /qt realm -- what the client says about the player's realm (feeds Q7)
+  * /qt roster -- how the client spells the OTHER group members, and the raw
+    sender of the last addon message (issue #24, feeds Q7)
 
 It owns its own event frame for quest-event tracing, so Core never learns that
 tracing exists. Sharing Core's frame would make this file undeletable.
@@ -202,6 +204,54 @@ function ns.commands.realm()
 end
 
 ------------------------------------------------------------------------------
+-- /qt roster -- how does the client spell the OTHER group members?
+--
+-- Issue #24: a name with a space reached us as "Itemys Targaryen" in an addon
+-- message and as "Itemys-Targaryen" from the roster. ns.PeerKey no longer cares
+-- which, but the exact shapes are still unmeasured -- this prints them, next to
+-- the raw sender of the last addon message we saw on our prefix.
+--
+-- Run it while grouped, after the other client has sent anything (/qt ping).
+------------------------------------------------------------------------------
+
+local lastSender = nil   -- raw CHAT_MSG_ADDON sender, untouched
+
+function ns.commands.roster()
+    ns.Print("roster probe:")
+    local prefix = (_G.IsInRaid and _G.IsInRaid()) and "raid" or "party"
+    local found = 0
+    for i = 1, (prefix == "raid") and 40 or 4 do
+        local unit = prefix .. i
+        local exists = _G.UnitExists and _G.UnitExists(unit)
+        if exists then
+            found = found + 1
+            for _, api in ipairs({ "UnitName", "UnitFullName" }) do
+                local fn = _G[api]
+                if fn then
+                    local ok, name, realm = pcall(fn, unit)
+                    ns.Print(("  %s(\"%s\")  ->  [%s], [%s]"):format(
+                        api, unit, ok and ns.SafeStr(name) or "ERROR", ns.SafeStr(realm)))
+                    if ok and api == "UnitName" then
+                        local key, shown = ns.PeerKey(name, realm)
+                        ns.Print(("      key [%s]  shown as [%s]  known peer: %s"):format(
+                            ns.SafeStr(key), ns.SafeStr(shown), ns.yn(key and ns.peers[key])))
+                    end
+                end
+            end
+        end
+    end
+    if found == 0 then ns.Print("  no other group members -- run this while grouped.") end
+
+    if lastSender == nil then
+        ns.Print("  last addon-message sender: none seen yet (ask the other client to /qt ping)")
+    else
+        local key, shown = ns.PeerKey(lastSender)
+        ns.Print(("  last addon-message sender: [%s]"):format(ns.SafeStr(lastSender)))
+        ns.Print(("      key [%s]  shown as [%s]"):format(ns.SafeStr(key), ns.SafeStr(shown)))
+    end
+end
+
+------------------------------------------------------------------------------
 -- Help, under a heading of its own: these are probes, not everyday commands.
 ------------------------------------------------------------------------------
 
@@ -212,6 +262,7 @@ ns.AddHelp("/qt frames", "list the UI objects M4 would hook", PROBES)
 ns.AddHelp("/qt channel", "probe instance-group detection and the channel we would use", PROBES)
 ns.AddHelp("/qt sendtest", "print what SendAddonMessage returns here (run solo and grouped)", PROBES)
 ns.AddHelp("/qt realm", "print what the client reports as your name and realm", PROBES)
+ns.AddHelp("/qt roster", "print how the client spells the other group members (run grouped)", PROBES)
 
 ------------------------------------------------------------------------------
 -- Event tracing frame
@@ -241,4 +292,12 @@ traceFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3, arg4)
         end
     end
     ns.Print(table.concat(parts, "   "))
+end)
+
+-- A second frame, for /qt roster: remember the raw sender of the last addon
+-- message on OUR prefix. Its own frame so the quest tracing above stays as it was.
+local senderFrame = CreateFrame("Frame")
+senderFrame:RegisterEvent("CHAT_MSG_ADDON")
+senderFrame:SetScript("OnEvent", function(_, _, prefix, _, _, sender)
+    if prefix == ns.PREFIX then lastSender = sender end
 end)

@@ -18,7 +18,7 @@ Run after every change, before anything else.
 | # | Step | Expected |
 |---|---|---|
 | A1 | `/reload`, then check the AddOns list | **Quest Together** is listed and enabled. No Lua error on load. |
-| A2 | `/qt help` | Header `v0.0.2 -- commands:` (the version comes from the `.toc`), then `/qt`, `/qt ask <id>`, `/qt ping`, `/qt status`, `/qt help`, `/qt ui`, then `-- still-open probes --` with `/qt events`, `/qt frames`, `/qt channel`, `/qt sendtest` and `/qt realm`. |
+| A2 | `/qt help` | Header `v0.0.2 -- commands:` (the version comes from the `.toc`), then `/qt`, `/qt ask <id>`, `/qt ping`, `/qt status`, `/qt help`, `/qt ui`, then `-- still-open probes --` with `/qt events`, `/qt frames`, `/qt channel`, `/qt sendtest`, `/qt realm` and `/qt roster`. |
 | A3 | `/qt ui` | Popup appears: `No quest open.` `/qt ui` again hides it. |
 | A4 | `/qt` with no quest open | `No quest selected. Open a quest at an NPC, or use /qt ask <questID>.` |
 | A5 | `/qt ask 92460` while solo | `Cannot ask: not in a group` |
@@ -62,6 +62,7 @@ quest `Q2` that B currently has **in their log, uncompleted**.
 | B14 | A: `/qt ask Q1`, then `/qt ask Q2`, then `/qt ask Q1` again, all within 3 seconds | Three `Asking your group…` lines. Live answer lines for **both** quests. Exactly **two** summaries — one per quest ID, not one per command. | Three summaries, or a missing live line → pending asks are not keyed by quest ID. |
 | B15 | B: `/reload`, then **type nothing on either client**. Watch B's chat for ~10 s, then B: `/qt status` | Within a few seconds and with nobody typing: `<A> has the addon.` on B, and `/qt status` on B lists A as `compatible`. B announces on entering the world and A, having been quiet, answers. | Nothing on B → either B's announcement never left (check `/qt ping` on B, then A's chat) or A did not answer it. On A, `/qt status` shows whether A heard B at all. Record which. |
 | B16 | With both grouped, cause a burst of roster events (promote/demote B, mark assist, swap subgroups, or invite and remove a third character) as fast as you can for ~10 s, then leave both clients idle for a minute | During the burst: no repeated `<other> has the addon.` lines, no chat spam, no disconnect — announcements are coalesced to at most one per ~3 s per client. While idle afterwards: nothing more is sent, i.e. the two clients are not answering each other in a loop. | There is no visible trace of an individual `H`; to watch the coalescing and the idle silence directly, temporarily add an `ns.Print` inside `ns.Announce` and count the lines — far fewer than the number of roster events, and none at all once everything is idle. |
+| B17 | One of the two characters has a **space in the name**. A: `/qt ask Q1` | The live line and the 3-second summary name B the **same way** and give the **same answer**. B is not dropped from `/qt status` when the roster changes. | Summary says `?  (no addon heard from)` right after a live answer → the roster and the sender disagree about the key again (issue #24). Run `/qt roster` and record it. |
 
 **Passing B2, B4, B5 and B7 closes the gate.** Tick the last M0 box in [`ROADMAP.md`](ROADMAP.md#milestones),
 close Q4 if nothing looked throttled, and update R3.
@@ -69,10 +70,10 @@ close Q4 if nothing looked throttled, and update R3.
 ### Observations to record even on a pass
 
 - Latency between the ask and the live answer line.
-- Sender name format as shown in `<B> has the addon.` — `Name` or `Name-Realm`? Note
-  that the addon now *shows* the bare name for a same-realm peer even when it keys
-  them as `Name-Realm`, so record the raw `sender` too if you can (`/qt events`-style
-  trace, or B's `/dump GetNormalizedRealmName()`). (feeds Q7)
+- **`/qt roster` on both clients**, after the other one has sent anything (`/qt ping`).
+  Record the whole output: how `UnitName` / `UnitFullName` spell the other member, and
+  the raw addon-message sender. Most useful with a character whose name contains a
+  space. Every line must end in `known peer: yes`. (feeds Q7, issue #24)
 - Whether anything differs when the pair is **cross-realm**, and whether a cross-realm
   peer is shown as `Name-Realm`. (feeds Q7)
 - Whether `/qt status` on A shows cached answers growing on a third client C that
