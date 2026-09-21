@@ -26,6 +26,7 @@ Run after every change, before anything else.
 | A9 | `/qt events`, accept a quest, `/qt events` | Trace lines for `QUEST_ACCEPTED` etc. with their arguments. **Record the `QUEST_ACCEPTED` arguments** — this closes "Still unverified" item 1. |
 | A10 | `/qt frames` | A yes/NO line per frame name. Record it (feeds Q5). |
 | A11 | `/qt ask 0`, `/qt ask 1.5`, `/qt ask -3` | `Cannot ask: invalid quest ID` — rejected before anything is sent. `/qt ask 92460` while solo still reads `Cannot ask: not in a group`, so the guard did not swallow valid IDs. |
+| A12 | `/qt sendtest` while solo | Says whether `Enum.SendAddonMessageResult` exists (and lists it if so), then prints the count, value and type of everything the raw send returned. **Record the whole output** — this is the solo half of "Still unverified" item 2 in [`MEASUREMENTS.md`](MEASUREMENTS.md#still-unverified). No Lua error, whatever it prints. |
 
 ---
 
@@ -61,6 +62,12 @@ close Q4 if nothing looked throttled, and update R3.
 - Whether anything differs when the pair is **cross-realm**.
 - Whether `/qt status` on A shows cached answers growing on a third client C that
   never asked (passive caching via broadcast replies).
+- **`/qt sendtest` while grouped** — run it once, then about ten times in a row.
+  Record the count, value and type it prints each time, and whether the value
+  changes under the spam. That is the grouped half of "Still unverified" item 2 in
+  [`MEASUREMENTS.md`](MEASUREMENTS.md#still-unverified) and the evidence for
+  [Q4](MEASUREMENTS.md#open-questions). Compare it with the solo output from A12:
+  the two together say which return convention this client uses.
 
 ---
 

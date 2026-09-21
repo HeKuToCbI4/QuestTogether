@@ -12,8 +12,9 @@ The one-shot measurement probes were retired on 2026-09-21 once their answers we
 recorded in docs/MEASUREMENTS.md (API presence, the oracle, the GetInfo schema).
 What remains probes the questions still open:
 
-  * /qt events -- what arguments quest events actually carry (still unverified)
-  * /qt frames -- which Mainline UI frames exist, for M4's hooks
+  * /qt events   -- what arguments quest events actually carry (still unverified)
+  * /qt frames   -- which Mainline UI frames exist, for M4's hooks
+  * /qt sendtest -- what SendAddonMessage returns here (feeds Q4)
 
 It owns its own event frame for quest-event tracing, so Core never learns that
 tracing exists. Sharing Core's frame would make this file undeletable.
@@ -63,6 +64,67 @@ function ns.commands.frames()
 end
 
 ------------------------------------------------------------------------------
+-- /qt sendtest -- what does SendAddonMessage actually RETURN on this client?
+--
+-- Still unmeasured: older builds return a boolean, newer ones an
+-- Enum.SendAddonMessageResult code where 0 means success. ns.Send has to read
+-- that result, and until this is settled it reads it conservatively (see the
+-- table above ns.Send in Protocol.lua). This probe settles it.
+--
+-- It calls the RAW API on purpose rather than ns.Send, so nothing of ours can
+-- reshape the answer. The payload is the ordinary presence announcement, so a
+-- send that does go out is harmless -- every peer already handles it.
+--
+-- Run it solo (a failure here IS the measurement), grouped (expected to
+-- succeed), and several times in a row while grouped (looking for a throttle --
+-- Q4). Record what it prints in docs/MEASUREMENTS.md.
+------------------------------------------------------------------------------
+
+-- Varargs, so that "returned nothing" and "returned nil" stay distinguishable.
+local function PrintReturns(ok, ...)
+    if not ok then
+        ns.Print("  raised an error: " .. ns.SafeStr((...)))
+        return
+    end
+    local n = select("#", ...)
+    ns.Print(("  returned %d value(s)"):format(n))
+    if n == 0 then
+        ns.Print("    (nothing at all -- there is no result to interpret)")
+        return
+    end
+    for i = 1, n do
+        local v = (select(i, ...))
+        local okType, ty = pcall(type, v)
+        ns.Print(("    [%d] %s   type=%s"):format(i, ns.SafeStr(v), okType and ty or "?"))
+    end
+end
+
+function ns.commands.sendtest()
+    if not ns.api.send then
+        ns.Print("sendtest: no SendAddonMessage API here -- nothing to measure.")
+        return
+    end
+
+    local enum = _G.Enum and _G.Enum.SendAddonMessageResult
+    ns.Print("sendtest: Enum.SendAddonMessageResult present: " .. ns.yn(type(enum) == "table"))
+    if type(enum) == "table" then
+        for name, code in pairs(enum) do
+            ns.Print(("    %-28s %s"):format(ns.SafeStr(name), ns.SafeStr(code)))
+        end
+    end
+
+    local channel = ns.GroupChannel()
+    if channel then
+        ns.Print("  grouped: sending presence to " .. channel .. " -- expected to succeed.")
+    else
+        channel = "PARTY"
+        ns.Print("  solo: sending presence to PARTY anyway -- a failure here IS the measurement.")
+    end
+
+    PrintReturns(pcall(ns.api.send, ns.PREFIX, ns.PROTOCOL .. "|H", channel))
+end
+
+------------------------------------------------------------------------------
 -- /qt help
 ------------------------------------------------------------------------------
 
@@ -75,6 +137,7 @@ function ns.commands.help()
     ns.Print("-- still-open probes --")
     ns.Print("  /qt events       toggle tracing of quest events and their arguments")
     ns.Print("  /qt frames       list the UI objects M4 would hook")
+    ns.Print("  /qt sendtest     print what SendAddonMessage returns here")
 end
 
 ------------------------------------------------------------------------------

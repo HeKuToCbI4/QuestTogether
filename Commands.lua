@@ -48,6 +48,9 @@ function ns.Ask(questID)
     questID = ns.ValidQuestID(questID)
     if not questID then return false, "invalid quest ID" end
     askedQuest = questID
+    -- A send that failed must return BEFORE the "Asking your group..." line and
+    -- before the report timer: a 3-second wait for answers to a question nobody
+    -- was asked would print a screenful of honest-looking "?" for no reason.
     local ok, err = ns.Send(ns.PROTOCOL .. "|Q|" .. questID)
     if not ok then return false, err end
 

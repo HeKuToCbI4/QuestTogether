@@ -106,6 +106,7 @@ Solo verification tools — these run with one client and nobody else online:
 |---|---|
 | `/qt events` | Toggle tracing of quest events and their arguments |
 | `/qt frames` | List the UI objects M4 would hook |
+| `/qt sendtest` | Print what `SendAddonMessage` returns here (run solo and grouped) |
 
 Answers print live as they arrive, then a summary follows after 3 seconds. Peers
 that never answer stay `?` — never "no".
