@@ -33,3 +33,14 @@ read_globals = {
     "UIParent",
     "strsplit",
 }
+
+-- The offline test suite (`lua5.1 tests/run.lua`). It is plain Lua, not addon
+-- code: it never runs in the client, and it deliberately does to `_G` what the
+-- client would do -- installing the WoW globals above and taking them away
+-- again. It is linted with everything else; these are the two differences.
+files["tests/**"] = {
+    -- run.lua puts tests/ on package.path so test files can require("harness").
+    globals = { "package" },
+    -- `arg` is the script's argument table; run.lua reads arg[0] and arg[1].
+    read_globals = { "arg" },
+}

@@ -66,6 +66,11 @@ f:SetScript("OnEvent", function(_, event, arg1, arg2, arg3, arg4)
         -- Re-announce on every roster change. State, not events: we do not try
         -- to track who joined when, we just make sure everyone eventually hears
         -- us. (docs/PROTOCOL.md, "Sync state, not events".)
-        if ns.GroupChannel() then ns.Announce() end
+        --
+        -- Debounced, because GROUP_ROSTER_UPDATE fires far more often than people
+        -- join or leave -- role, online and zone changes all raise it, in bursts
+        -- in a raid. ns.AnnounceSoon turns a burst into one message; the delay is
+        -- a few seconds and presence is not urgent.
+        if ns.GroupChannel() then ns.AnnounceSoon() end
     end
 end)

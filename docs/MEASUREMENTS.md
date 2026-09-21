@@ -136,7 +136,19 @@ surface needs measuring.
 inferred from a crash's local state rather than observed cleanly. `/qt events` traces
 the real arguments. Cheap to settle; do it before v0.2 relies on it.
 
-**2. What `SendAddonMessage` returns here.** The call's *result* was ignored until
+**2. Instance (LFG) groups.** `ns.GroupChannel` now returns `"INSTANCE_CHAT"` when
+`IsInGroup(<instance category>)` is true, but **neither the category constant nor the
+argument form has been seen on this client** — the lookup is guarded, so a miss simply
+leaves the old `"RAID"` / `"PARTY"` behaviour in place. `/qt channel` prints whether
+`LE_PARTY_CATEGORY_INSTANCE` (or `Enum.PartyCategory.Instance`) exists and its value,
+what `IsInGroup(<category>)`, `IsInGroup()` and `IsInRaid()` return, and the channel
+that would be used. Run it **three times** — solo, in a normal party, and inside an
+LFG/dungeon-finder group — and record all three outputs here. The instance run is the
+one that matters: it must print an existing constant and `channel we would use:
+INSTANCE_CHAT`. If the constant is absent, find the name this client uses before
+relying on the branch.
+
+**3. What `SendAddonMessage` returns here.** The call's *result* was ignored until
 now — "it did not throw" was read as "it was sent". Older clients return a boolean;
 newer ones return an `Enum.SendAddonMessageResult` code where `0` is success and
 non-zero means throttled, invalid channel, not in a group, and so on. **Which of the
@@ -158,7 +170,7 @@ Until this is recorded, `ns.Send` reads the result conservatively: only an expli
 unrecognised are success. The spam run also feeds [Q4](#open-questions) (rate
 limiting), which is the other half of the same question.
 
-**3. Everything requiring two grouped clients.** Every run so far has been solo
+**4. Everything requiring two grouped clients.** Every run so far has been solo
 (`channel : no (solo)`). The addon-message round-trip, group identity under the secret
 rules, and cross-client quest queries all remain open.
 
@@ -175,7 +187,7 @@ rules, and cross-client quest queries all remain open.
 | Q4 | Are addon messages rate-limited differently here? | Open | **The remaining gate.** Needs two grouped clients. `/qt sendtest`, run repeatedly while grouped, is the instrument: a throttle should show up as a changed return value (see "Still unverified" item 2). |
 | Q5 | Do quest frame objects keep Mainline names and structure? | Open | M4 |
 | Q6 | Does the default quest log already show party progress? | **Effectively closed** | No backing API exists ([Q3](#open-questions)), and UI cannot show what no API provides. Confirm visually while grouped. |
-| Q7 | Is `name-realm` a stable peer key? | Open | M2. Note the code currently keys by **bare name** (`ns.BaseName` strips the realm), which is strictly worse: same-named characters from two realms collide, and a cross-realm namesake of the local player is ignored as "self". |
+| Q7 | Is `name-realm` a stable peer key? | Open — narrowed | The code now keys by full normalised `Name-Realm` (`ns.PeerKey`), instead of the bare name that made two realms collide. Two things are still **unmeasured** on this client: whether `GetNormalizedRealmName` exists (the code falls back to a bare key if not), and what realm suffix `CHAT_MSG_ADDON` actually puts on `sender` for a same-realm and a cross-realm peer. Record both in the two-client test ([TESTING.md §B](TESTING.md#b-two-client-round-trip--the-m0-gate), "Observations"). |
 
 ---
 
