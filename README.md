@@ -211,6 +211,9 @@ QuestWithAFriend/
 ├── CLAUDE.md            # rules of the road for AI agents (and new contributors)
 ├── PLAN.md              # index of the design docs
 ├── CHANGELOG.md
+├── .pkgmeta             # packaging manifest for the release zip
+├── .github/
+│   └── workflows/       # CI (luacheck, tests, link check) and tag-driven releases
 ├── docs/
 │   ├── ARCHITECTURE.md  # premise, constraints C1-C7, decisions D1-D5, data model
 │   ├── PROTOCOL.md      # wire protocol: revision 2 (built), revision 3 (planned)
@@ -227,6 +230,14 @@ QuestWithAFriend/
 ```
 
 `tests/` is not listed in the `.toc`, so the client never loads it.
+
+### Releases
+
+Push a tag (`git tag vX.Y.Z && git push origin vX.Y.Z`) and
+`.github/workflows/release.yml` packages the addon with the BigWigs packager, attaching
+a zip to a GitHub release. The zip holds only what the client loads — the `.toc` and the
+eight `.lua` files — per `.pkgmeta`. CurseForge upload is still to come (M5); the
+project ID `1706296` is already in the `.toc`.
 
 ### Load order
 
