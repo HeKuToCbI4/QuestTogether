@@ -145,8 +145,8 @@ one area cannot ripple into another.
 | `Peers.lua` | Data layer | The `peers` registry and `RecordAnswer` — **home of the tri-state invariant** |
 | `Protocol.lua` | Transport layer | `PREFIX`, message grammar, `Send`, `ParseMessage` (pure), `HandleAddonMessage`, prefix registration |
 | `Query.lua` | UI layer (text) | `ns.Ask`, the pending asks keyed by quest ID, the live lines and the summary |
-| `Commands.lua` | UI layer (text) | `/qt ask`, `/qt ping`, `/qt status`, `/qt help` |
-| `Config.lua` | UI layer (panel) | Settings (`ns.GetSetting` / `ns.SetSetting`), the Options panel, `/qt config`, the debug report (`/qt debug`) |
+| `Commands.lua` | UI layer (text) | `/qtf ask`, `/qtf ping`, `/qtf status`, `/qtf help` |
+| `Config.lua` | UI layer (panel) | Settings (`ns.GetSetting` / `ns.SetSetting`), the Options panel, `/qtf config`, the debug report (`/qtf debug`) |
 | `Diagnostics.lua` | — | Solo verification commands. **Deletable** — see below. |
 | `UI.lua` | UI layer (panel) | The status popup, quest-frame show/hide hook, silent auto-ask on `QUEST_DETAIL` |
 | `Core.lua` | Wiring | Bootstrap, event frame, slash dispatch |
@@ -166,7 +166,7 @@ Two boundaries are deliberate and worth preserving as this grows:
   opaque payloads and enforces the rules; meaning lives above it.
 - **Diagnostics is disposable.** It owns its own event frame and registers into the
   shared `ns.commands` and `ns.helpLines` tables, so deleting the file removes all
-  dev tooling and touches nothing else — `/qt help` simply stops listing the two
+  dev tooling and touches nothing else — `/qtf help` simply stops listing the two
   probes. If `Core.lua` ever grows a reference to `ns.tracing`, that property is
   broken and the file becomes permanent.
 
@@ -179,7 +179,7 @@ at load time.**
 
 **Registries, not wrap chains.** Modules announce themselves by adding to lists that
 `Compat.lua` declares — `ns.OnAnswer(fn)` for "a peer answered", `ns.AddHelp(cmd,
-text)` for `/qt help`, `ns.commands` for the commands themselves. Nothing wraps
+text)` for `/qtf help`, `ns.commands` for the commands themselves. Nothing wraps
 anything, so no file needs another file to have loaded first, and a listener that
 throws cannot take the others down with it (`Protocol.lua` calls each in its own
 `pcall`).
@@ -218,7 +218,7 @@ decoration of the quest frame is a later, isolated, defensively-written feature.
 *As built (v0.0.2):* the panel anchors beside `QuestFrame` and uses
 `HookScript("OnShow"/"OnHide")` when that global exists. That is a soft,
 existence-guarded hook on the frame's name only — nothing inside the frame is
-touched — and `/qt ui` is the fallback if the name changes ([Q5](MEASUREMENTS.md#open-questions)).
+touched — and `/qtf ui` is the fallback if the name changes ([Q5](MEASUREMENTS.md#open-questions)).
 
 ### Why there is no local completed-quest database
 

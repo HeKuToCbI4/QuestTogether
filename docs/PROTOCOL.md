@@ -18,7 +18,7 @@ The implemented revision-2 protocol, and the planned batched revision 3.
   request arrived on. The instance case is *implemented but unverified on the live
   client*: the category constant it depends on has not been seen on Forever, so the
   lookup is guarded and falls back to today's `"RAID"` / `"PARTY"` behaviour when it
-  is missing. Measure it with `/qt channel`
+  is missing. Measure it with `/qtf channel`
   ([still unverified](MEASUREMENTS.md#still-unverified)).
 - **Payload:** ASCII, `|`-delimited fields, first field is the protocol revision.
 - **Maximum:** inbound payloads over 200 characters are dropped unparsed.
@@ -30,7 +30,7 @@ first two-client test has as little in it to go wrong as possible.
 
 | Message | Direction | Meaning |
 |---|---|---|
-| `2\|H` | broadcast | Presence announcement. Sent on `PLAYER_ENTERING_WORLD` and on roster change while grouped — **debounced**, see below — and immediately by `/qt ping`. **Replied to with an `H` of our own, but only by a client that has itself been quiet.** |
+| `2\|H` | broadcast | Presence announcement. Sent on `PLAYER_ENTERING_WORLD` and on roster change while grouped — **debounced**, see below — and immediately by `/qtf ping`. **Replied to with an `H` of our own, but only by a client that has itself been quiet.** |
 | `2\|Q\|<questID>` | broadcast | "Have you completed this quest?" One quest per message. |
 | `2\|A\|<questID>\|<status>` | broadcast | Answer. `status`: `0` = not completed, `1` = completed, `2` = not completed but in my log right now ("on it"). |
 
@@ -41,7 +41,7 @@ Behaviour that is part of the contract:
   not parsed, not answered.
 - **A quest ID must be a positive integer below `2^31`.** `0`, negatives, fractions,
   `inf`/`NaN` and out-of-range values are ignored — on inbound `Q` and `A` alike, and
-  by `/qt ask`. Zero is the sharp one: the oracle answers `false` for it rather than
+  by `/qtf ask`. Zero is the sharp one: the oracle answers `false` for it rather than
   raising ([measured](MEASUREMENTS.md#getinfo--measured-schema-on-the-live-client)),
   so an unvalidated `0` would broadcast a confident "not completed" for something
   that is not a quest. Validation is `ns.ValidQuestID`.
@@ -61,7 +61,7 @@ Behaviour that is part of the contract:
 - **`H` is debounced, trailing edge** (`ns.AnnounceSoon`, window `ns.ANNOUNCE_DEBOUNCE`
   = 3 s). `GROUP_ROSTER_UPDATE` fires far more often than people join or leave — role,
   online and zone changes all raise it — so the first event opens a window, every event
-  inside it is absorbed, and one `H` goes out when the window closes. `/qt ping` is
+  inside it is absorbed, and one `H` goes out when the window closes. `/qtf ping` is
   manual and bypasses the window.
 - **An `H` is answered by whoever has been quiet.** "Quiet" means we have not announced
   in the last `ns.ANNOUNCE_QUIET` = 10 s. This is what gives a client with an empty peer

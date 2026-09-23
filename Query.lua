@@ -1,10 +1,10 @@
 --[[----------------------------------------------------------------------------
 Query -- asking the group about a quest, and reporting what comes back.
 
-One entry point, ns.Ask, used by both /qt and the panel's auto-ask. The two
+One entry point, ns.Ask, used by both /qtf and the panel's auto-ask. The two
 differ only in how loud they are, so that is a flag rather than a second path:
 
-  * manual (/qt, /qt ask <id>) prints "Asking your group...", a line per answer
+  * manual (/qtf, /qtf ask <id>) prints "Asking your group...", a line per answer
     as it lands, and -- when the reply window closes -- a line for each member
     who did NOT answer. Whoever already got a live line is not printed again;
     if everybody answered, the window closes in silence.
@@ -75,7 +75,7 @@ ns.OnAnswer(function(peer, questID)
     end
 end)
 
--- Returns ok, err so a caller can choose to report the failure (manual /qt does)
+-- Returns ok, err so a caller can choose to report the failure (manual /qtf does)
 -- or stay quiet (auto-ask need not tell the user they are not in a group).
 ---@param questID number?
 ---@param silent boolean?   true: send the query without printing anything

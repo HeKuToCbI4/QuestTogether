@@ -46,7 +46,7 @@ local ADDON_NAME, ns = ...
 ---@field onIt table<number, boolean>        questID -> true; only ever set alongside answered == false
 
 ---@class QT.HelpLine
----@field cmd string                         the command as typed, e.g. "/qt ping"
+---@field cmd string                         the command as typed, e.g. "/qtf ping"
 ---@field text string                        one short line of description
 ---@field group string?                      optional heading; ungrouped lines print first
 ---@class QT.GroupMember
@@ -129,12 +129,12 @@ function ns.OnAnswer(fn)
     ns.answerListeners[#ns.answerListeners + 1] = fn
 end
 
--- /qt help is assembled from whatever modules are present. Each module registers
+-- /qtf help is assembled from whatever modules are present. Each module registers
 -- the commands IT owns, so deleting a file takes its help lines with it and
 -- leaves the rest of the list intact.
 ns.helpLines = ns.helpLines or {}
 
----@param cmd string      the command as typed, e.g. "/qt ping"
+---@param cmd string      the command as typed, e.g. "/qtf ping"
 ---@param text string     one short line of description
 ---@param group string?   optional heading; ungrouped lines print first
 function ns.AddHelp(cmd, text, group)
@@ -142,7 +142,7 @@ function ns.AddHelp(cmd, text, group)
     ns.helpLines[#ns.helpLines + 1] = { cmd = cmd, text = text, group = group }
 end
 
--- "Copy debug info" (Config.lua) is assembled the same way as /qt help: each
+-- "Copy debug info" (Config.lua) is assembled the same way as /qtf help: each
 -- module registers the section IT can report on, so deleting Diagnostics takes
 -- its probes out of the report and leaves the rest intact. A section writes its
 -- lines through `out`; it runs under pcall when the report is built.
@@ -321,7 +321,7 @@ end
 
 -- The "instance group" category, however this client spells it. UNVERIFIED here:
 -- neither the constant nor the Enum form has been seen on Forever, so both are
--- plain guarded lookups and a miss returns nil. /qt channel measures it.
+-- plain guarded lookups and a miss returns nil. /qtf channel measures it.
 ---@return any? category   nil when the client exposes no instance category
 function ns.InstancePartyCategory()
     local c = _G.LE_PARTY_CATEGORY_INSTANCE

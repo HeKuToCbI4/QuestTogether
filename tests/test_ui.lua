@@ -88,7 +88,7 @@ end)
 
 h.test("without a quest frame the panel appears in place", function(env, ns)
     instrument(env)
-    h.noError(function() ns.commands.ui() end, "/qt ui solo")
+    h.noError(function() ns.commands.ui() end, "/qtf ui solo")
     h.isNil(sliding(env), "nothing to slide from under")
 end)
 
@@ -114,7 +114,7 @@ h.test("the parchment is borrowed from the quest panel on screen",
     end)
 
 h.test("no quest panel on screen: no parchment, no error", { questFrame = fakeQuestFrame() }, function(env, ns)
-    h.noError(function() ns.commands.ui() end, "/qt ui with the quest frame up")
+    h.noError(function() ns.commands.ui() end, "/qtf ui with the quest frame up")
     h.isNil(ns.uiParchment.source, "nothing borrowed")
 end)
 
@@ -142,7 +142,7 @@ h.test("no quest font on screen: parchment still applies", {
     questFrame = fakeQuestFrame(),
     globals = { QuestFrameDetailPanel = fakeParchmentPanel() },
 }, function(env, ns)
-    h.noError(function() ns.commands.ui() end, "/qt ui")
+    h.noError(function() ns.commands.ui() end, "/qtf ui")
     h.isNil(ns.uiParchment.font, "no font borrowed")
     h.eq(ns.uiParchment.source, "QuestFrameDetailPanel.Bg", "parchment still found")
 end)

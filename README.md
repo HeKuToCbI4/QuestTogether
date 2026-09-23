@@ -58,7 +58,7 @@ as "no".
 - **Auto-ask.** Opening a quest — offered, in progress or ready to turn in — asks the
   group about it, silently: the answers appear in the popup, not in chat. Every
   opening asks afresh, so the popup shows what is true *now*, not a cached answer.
-- **Chat output.** For `/qt` only: answers print live as they arrive. After 3 seconds
+- **Chat output.** For `/qtf` only: answers print live as they arrive. After 3 seconds
   the members who did *not* answer are listed — nobody is printed twice.
 - **"On it now".** A peer who has the quest in their log but has not completed it is
   reported separately from a plain "no".
@@ -96,30 +96,30 @@ Then `/reload`, and enable **Quest Together Forever** in the AddOns list.
 ## Usage
 
 Open a quest at an NPC and the status popup appears beside it — the group is
-asked automatically, without printing anything to chat. `/qt` re-asks on demand
-and reports in chat, and `/qt ui` toggles the popup solo for testing.
+asked automatically, without printing anything to chat. `/qtf` re-asks on demand
+and reports in chat, and `/qtf ui` toggles the popup solo for testing.
 
 | Command | Effect |
 |---|---|
-| `/qt` | Ask your group about the quest currently open |
-| `/qt ask <questID>` | Ask about a specific quest ID |
-| `/qt ping` | Announce yourself to the group |
-| `/qt status` | List peers heard from, and how much we know about them |
-| `/qt ui` | Toggle the status popup (works solo) |
-| `/qt help` | List commands |
+| `/qtf` | Ask your group about the quest currently open |
+| `/qtf ask <questID>` | Ask about a specific quest ID |
+| `/qtf ping` | Announce yourself to the group |
+| `/qtf status` | List peers heard from, and how much we know about them |
+| `/qtf ui` | Toggle the status popup (works solo) |
+| `/qtf help` | List commands |
 
 Solo verification tools — these run with one client and nobody else online:
 
 | Command | Effect |
 |---|---|
-| `/qt events` | Toggle tracing of quest events and their arguments |
-| `/qt frames` | List the UI objects M4 would hook |
-| `/qt channel` | Probe instance-group detection and the channel messages would use |
-| `/qt sendtest` | Print what `SendAddonMessage` returns here (run solo and grouped) |
-| `/qt realm` | Print what the client reports as your name and realm |
-| `/qt roster` | Print how the client spells the other group members (run grouped) |
+| `/qtf events` | Toggle tracing of quest events and their arguments |
+| `/qtf frames` | List the UI objects M4 would hook |
+| `/qtf channel` | Probe instance-group detection and the channel messages would use |
+| `/qtf sendtest` | Print what `SendAddonMessage` returns here (run solo and grouped) |
+| `/qtf realm` | Print what the client reports as your name and realm |
+| `/qtf roster` | Print how the client spells the other group members (run grouped) |
 
-For a `/qt` you typed, answers print live as they arrive; after 3 seconds the members
+For a `/qtf` you typed, answers print live as they arrive; after 3 seconds the members
 who did not answer are listed (nothing, if everybody answered); the automatic ask when you open a quest prints nothing at all.
 Peers that never answer stay `?` — never "no".
 
@@ -142,7 +142,7 @@ buried:
     group roster changes, and in reply to another member's announcement if you have
     not sent one recently. Bursts are coalesced into one message every few seconds.
   - A completion answer is sent **automatically** whenever any group member asks
-    (their `/qt`, or them simply opening a quest). You are not prompted.
+    (their `/qtf`, or them simply opening a quest). You are not prompted.
 - **Control: there is none yet.** v0.0.3 has no settings. The only way to stop
   answering is to disable the addon — peers then see no entry for you. Two
   independent toggles (answer queries / share quest log) are planned
@@ -203,7 +203,7 @@ QuestTogetherForever/
 ├── Peers.lua            # peer registry; home of the tri-state invariant
 ├── Protocol.lua         # wire format and transport
 ├── Query.lua            # asking the group about a quest, and reporting answers
-├── Commands.lua         # user-facing slash commands, incl. /qt help
+├── Commands.lua         # user-facing slash commands, incl. /qtf help
 ├── Config.lua           # settings panel, settings, "Copy debug info"
 ├── Diagnostics.lua      # solo verification tools (deletable before release)
 ├── UI.lua               # the status popup panel
@@ -227,7 +227,8 @@ QuestTogetherForever/
 │   ├── run.lua          # discovers test_*.lua, runs them, exits non-zero on failure
 │   └── test_*.lua       # parser, tri-state invariant, revisions, answers, dispatch
 └── tools/
-    └── linkcheck.py     # verifies markdown links and anchors
+    ├── linkcheck.py     # verifies markdown links and anchors
+    └── rename_slash.py  # /qt -> /qtf; re-run after merging an older branch, then delete
 ```
 
 `tests/` is not listed in the `.toc`, so the client never loads it.
@@ -267,7 +268,7 @@ deleted, without anything else noticing.
 | `Peers` | What we know about group members | Cache policy changes |
 | `Protocol` | Wire format, send/receive | The protocol revision bumps |
 | `Query` | `ns.Ask`, pending asks, the live lines and the summary | Asking or reporting changes |
-| `Commands` | Slash commands that do real work, and `/qt help` | Command UX changes |
+| `Commands` | Slash commands that do real work, and `/qtf help` | Command UX changes |
 | `Config` | Settings, the settings panel, the debug report | A setting is added |
 | `Diagnostics` | Local verification tools | A new surface needs measuring |
 | `UI` | The status popup panel | The panel's presentation changes |
@@ -275,7 +276,7 @@ deleted, without anything else noticing.
 
 **`Diagnostics.lua` is deletable.** No other module calls into it, it owns its own
 event frame, and its commands and help lines are registered rather than wired in.
-Delete the file and its `.toc` line and everything else — `/qt help` included —
+Delete the file and its `.toc` line and everything else — `/qtf help` included —
 keeps working, minus the two probes.
 
 ---
