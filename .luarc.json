@@ -6,8 +6,8 @@
         "UIParent",
         "strsplit",
         "SlashCmdList",
-        "SLASH_QUESTTOGETHER1",
-        "QuestTogetherDB"
+        "SLASH_QUESTWITHFRIEND1",
+        "QuestWithAFriendDB"
     ],
     "diagnostics.disable": ["unused-local"],
     "workspace.ignoreDir": [".git", ".github", "tools"]

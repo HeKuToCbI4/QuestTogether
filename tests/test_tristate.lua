@@ -126,7 +126,7 @@ h.test("an answer from a never-seen sender is recorded (current behaviour)", fun
     local peer = ns.peers.Carol
     h.ok(peer, "the sender was created by their own answer")
     h.isTrue(peer.answered[QUEST], "and the answer was recorded")
-    h.eq(env.prints[1], "|cff33ff99Quest Together|r Carol has the addon.", "the peer was announced")
+    h.eq(env.prints[1], "|cff33ff99Quest With A Friend|r Carol has the addon.", "the peer was announced")
 end)
 
 h.test("a cross-realm peer is keyed by name and realm", function(_, ns)

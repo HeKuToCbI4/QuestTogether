@@ -21,8 +21,8 @@ local ADDON_NAME, ns = ...
 -- owns the slash command itself.
 ------------------------------------------------------------------------------
 
-SLASH_QUESTTOGETHER1 = "/qt"
-SlashCmdList["QUESTTOGETHER"] = function(input)
+SLASH_QUESTWITHFRIEND1 = "/qt"
+SlashCmdList["QUESTWITHFRIEND"] = function(input)
     local cmd, rest = (input or ""):match("^%s*(%S*)%s*(.-)%s*$")
     cmd = (cmd or ""):lower()
 
@@ -50,7 +50,7 @@ f:SetScript("OnEvent", function(_, event, arg1, arg2, arg3, arg4)
         if arg1 ~= ADDON_NAME then return end
         -- SavedVariables land just before this fires. There are no settings yet
         -- (v0.0.2), but touching the table now means v0.2 can start reading it.
-        _G.QuestTogetherDB = _G.QuestTogetherDB or {}
+        _G.QuestWithAFriendDB = _G.QuestWithAFriendDB or {}
         ns.RegisterPrefix()
 
     elseif event == "CHAT_MSG_ADDON" then

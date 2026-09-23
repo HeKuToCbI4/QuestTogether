@@ -1,6 +1,6 @@
 # Changelog
 
-Version numbers follow the `## Version` field of `QuestTogether.toc`.
+Version numbers follow the `## Version` field of `QuestWithAFriend.toc`.
 
 ## Unreleased
 
@@ -31,13 +31,17 @@ Version numbers follow the `## Version` field of `QuestTogether.toc`.
   summary three seconds later. `/qt` and `/qt ask <id>` still report in chat.
 - `/qt help` is built from what each module registers for its own commands, and its
   version header is read from the `.toc` instead of being hard-coded.
+- The addon is renamed to **Quest With A Friend**. The folder, the `.toc` filename and
+  `## Title` move together (the client silently skips an addon whose folder and `.toc`
+  differ), and `SavedVariables` becomes `QuestWithAFriendDB` (v0.0.2 saved nothing, so
+  no data is lost). The wire prefix `QTOG` and the `/qt` command are unchanged.
 
 ### Fixed
-- Every member of your group is now listed, whether or not they run Quest Together.
+- Every member of your group is now listed, whether or not they run Quest With A Friend.
   The popup and the `/qt` summary are driven by the group roster instead of "peers we
   have heard from", so a member without the addon reads `?  (no addon heard from)`
   rather than being silently absent. Grouped-but-nobody-has-it now says "None of your
-  group has Quest Together." instead of the false "(not in a group)". When the roster
+  group has Quest With A Friend." instead of the false "(not in a group)". When the roster
   cannot be read at all, the old list is shown — an unreadable roster is unknown, not
   empty, and nothing is ever invented as a "no".
 - Peers are identified by their full `Name-Realm` instead of the bare character name.

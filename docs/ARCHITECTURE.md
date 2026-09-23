@@ -2,7 +2,7 @@
 
 Why the addon is shaped the way it is: premise, constraints, decisions, data model, non-goals.
 
-> Part of the Quest Together design docs — index: [`PLAN.md`](../PLAN.md). Sections are
+> Part of the Quest With A Friend design docs — index: [`PLAN.md`](../PLAN.md). Sections are
 > marked **Implemented**, **Partially implemented** or **Planned**; for current
 > behaviour the code is authoritative.
 
@@ -58,7 +58,7 @@ The result is a recurring, low-grade social friction:
 - Group leaders guessing at who needs what when assembling a run.
 
 The information exists on the server. It simply isn't shared with clients. Quest
-Together's entire purpose is to route it the one way it can travel: voluntarily,
+With A Friend's entire purpose is to route it the one way it can travel: voluntarily,
 player to player.
 
 ---
@@ -271,7 +271,7 @@ defensible future feature and an explicit [non-goal](#non-goals) for v1.
 ### As built (v0.0.2)
 
 ```lua
-QuestTogetherDB = {}          -- SavedVariable; created empty, nothing reads it yet
+QuestWithAFriendDB = {}          -- SavedVariable; created empty, nothing reads it yet
 
 ns.peers = {                  -- session-scoped, in Peers.lua
   ["NameRealm"] = {           -- key: ns.PeerKey -- name + realm, own realm cut off,
@@ -299,7 +299,7 @@ until they leave.
 ### Target (v1)
 
 ```lua
-QuestTogether = {
+QuestWithAFriend = {
   version  = 1,              -- schema version, for SavedVariables migration
   settings = {
     enabled        = true,
@@ -310,7 +310,7 @@ QuestTogether = {
 }
 
 -- Session-scoped peer state. NOT persisted across sessions by design — see D2.
-QuestTogether.session = {
+QuestWithAFriend.session = {
   peers = {
     [guid] = {
       name       = "Name-Realm",
@@ -332,7 +332,7 @@ the only persistence mechanism is **`SavedVariables`**, declared in the `.toc` a
 serialised by the client into a Lua file under `WTF/`:
 
 ```
-## SavedVariables: QuestTogetherDB
+## SavedVariables: QuestWithAFriendDB
 ```
 
 Two properties of `SavedVariables` shape what they can be used for:

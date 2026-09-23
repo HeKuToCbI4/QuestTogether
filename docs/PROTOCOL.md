@@ -2,7 +2,7 @@
 
 The implemented revision-2 protocol, and the planned batched revision 3.
 
-> Part of the Quest Together design docs — index: [`PLAN.md`](../PLAN.md). Sections are
+> Part of the Quest With A Friend design docs — index: [`PLAN.md`](../PLAN.md). Sections are
 > marked **Implemented**, **Partially implemented** or **Planned**; for current
 > behaviour the code is authoritative.
 

@@ -9,6 +9,7 @@ desktop.ini
 # Python (tools/)
 __pycache__/
 *.pyc
+.venv/
 
 # Packaging output
 .release/
