@@ -15,6 +15,8 @@ Target presentation. Mostly planned; the "as built" note says what exists.
 > quest IDs rather than titles and words ("yes" / "no" / "on it now" / "?") rather
 > than glyphs. It *does* list the whole group roster, and it distinguishes "Not in a
 > group." from "None of your group has Quest Together Forever." as the table below specifies.
+> It has a bronze tooltip border filled with the quest frame's own parchment, slides out from under the quest frame, and colours
+> the state words with the colours in the glyph table below (words kept, no glyphs yet).
 
 ### Primary surface — party status panel
 

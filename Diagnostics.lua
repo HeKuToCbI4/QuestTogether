@@ -21,6 +21,8 @@ What remains probes the questions still open:
   * /qt realm -- what the client says about the player's realm (feeds Q7)
   * /qt roster -- how the client spells the OTHER group members, and the raw
     sender of the last addon message (issue #24, feeds Q7)
+  * /qt parchment -- which quest-frame texture the popup borrowed its parchment
+    from, and every texture the open quest panel owns (docs/TESTING.md, A15)
 
 It owns its own event frame for quest-event tracing, so Core never learns that
 tracing exists. Sharing Core's frame would make this file undeletable.
@@ -252,6 +254,55 @@ function ns.commands.roster()
 end
 
 ------------------------------------------------------------------------------
+-- /qt parchment -- where the popup's parchment came from
+------------------------------------------------------------------------------
+
+local QUEST_PANELS = {
+    "QuestFrameDetailPanel", "QuestFrameProgressPanel",
+    "QuestFrameRewardPanel", "QuestFrameGreetingPanel",
+}
+
+local function DescribeTexture(r)
+    local atlas = r.GetAtlas and r:GetAtlas()
+    local file  = r.GetTexture and r:GetTexture()
+    local w, h  = r:GetWidth(), r:GetHeight()
+    local layer = r.GetDrawLayer and r:GetDrawLayer()
+    local vr, vg, vb, va
+    if r.GetVertexColor then vr, vg, vb, va = r:GetVertexColor() end
+    local blend = r.GetBlendMode and r:GetBlendMode()
+    return ("atlas=%s  file=%s  %sx%s  %s  %s  tint=%s,%s,%s,%s  blend=%s  alpha=%s"):format(
+        tostring(atlas), tostring(file),
+        tostring(w and math.floor(w + 0.5)), tostring(h and math.floor(h + 0.5)),
+        tostring(layer), r:IsShown() and "shown" or "hidden",
+        tostring(vr), tostring(vg), tostring(vb), tostring(va), tostring(blend),
+        tostring(r.GetAlpha and r:GetAlpha()))
+end
+
+function ns.commands.parchment()
+    ns.Print("parchment probe (open a quest first):")
+    local found = ns.uiParchment or {}
+    ns.Print("  popup borrowed: " .. tostring(found.source) .. "  ->  " .. tostring(found.copied)
+        .. "  tint " .. tostring(found.tint))
+    ns.Print("  font borrowed: " .. tostring(found.font))
+    for _, name in ipairs(QUEST_PANELS) do
+        local p = _G[name]
+        if type(p) ~= "table" then
+            ns.Print("  " .. name .. ": absent")
+        else
+            ns.Print("  " .. name .. ": " .. (p:IsShown() and "shown" or "hidden")
+                .. (p.Bg and "  (has .Bg)" or ""))
+            if p:IsShown() and p.GetRegions then
+                for i, r in ipairs({ p:GetRegions() }) do
+                    if r.GetObjectType and r:GetObjectType() == "Texture" then
+                        ns.Print(("    #%d %s"):format(i, DescribeTexture(r)))
+                    end
+                end
+            end
+        end
+    end
+end
+
+------------------------------------------------------------------------------
 -- Help, under a heading of its own: these are probes, not everyday commands.
 ------------------------------------------------------------------------------
 
@@ -263,6 +314,7 @@ ns.AddHelp("/qt channel", "probe instance-group detection and the channel we wou
 ns.AddHelp("/qt sendtest", "print what SendAddonMessage returns here (run solo and grouped)", PROBES)
 ns.AddHelp("/qt realm", "print what the client reports as your name and realm", PROBES)
 ns.AddHelp("/qt roster", "print how the client spells the other group members (run grouped)", PROBES)
+ns.AddHelp("/qt parchment", "print where the popup's parchment came from (quest open)", PROBES)
 
 ------------------------------------------------------------------------------
 -- Event tracing frame

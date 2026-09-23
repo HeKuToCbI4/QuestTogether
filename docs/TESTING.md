@@ -18,12 +18,12 @@ Run after every change, before anything else.
 | # | Step | Expected |
 |---|---|---|
 | A1 | `/reload`, then check the AddOns list | **Quest Together Forever** is listed and enabled. No Lua error on load. |
-| A2 | `/qt help` | Header `v0.0.2 -- commands:` (the version comes from the `.toc`), then `/qt`, `/qt ask <id>`, `/qt ping`, `/qt status`, `/qt help`, `/qt ui`, then `-- still-open probes --` with `/qt events`, `/qt frames`, `/qt channel`, `/qt sendtest`, `/qt realm` and `/qt roster`. |
+| A2 | `/qt help` | Header `v0.0.2 -- commands:` (the version comes from the `.toc`), then `/qt`, `/qt ask <id>`, `/qt ping`, `/qt status`, `/qt help`, `/qt ui`, then `-- still-open probes --` with `/qt events`, `/qt frames`, `/qt channel`, `/qt sendtest`, `/qt realm`, `/qt roster` and `/qt parchment`. |
 | A3 | `/qt ui` | Popup appears: `No quest open.` `/qt ui` again hides it. |
 | A4 | `/qt` with no quest open | `No quest selected. Open a quest at an NPC, or use /qt ask <questID>.` |
 | A5 | `/qt ask 92460` while solo | `Cannot ask: not in a group` |
 | A6 | `/qt status` | `No peers heard from yet. Try /qt ping while grouped.` |
-| A7 | Open any quest at an NPC | Popup appears beside the quest frame with `Quest <id>`, a `You: …` line and, while solo, `Not in a group.` Nothing is printed to chat (solo stays quiet). Closing the quest frame hides the popup. |
+| A7 | Open any quest at an NPC | Popup appears beside the quest frame with a gold `Quest Together Forever` title, `Quest <id>` in grey on the right, a `You: …` line and, while solo, `Not in a group.` Nothing is printed to chat (solo stays quiet). Closing the quest frame hides the popup. |
 | A8 | A quest you **have** completed vs one you have **not** | `You: yes - already completed` / `You: no - has not completed it` respectively. |
 | A9 | `/qt events`, accept a quest, `/qt events` | Trace lines for `QUEST_ACCEPTED` etc. with their arguments. **Record the `QUEST_ACCEPTED` arguments** — this closes "Still unverified" item 1. |
 | A10 | `/qt frames` | A yes/NO line per frame name. Record it (feeds Q5). |
@@ -31,6 +31,7 @@ Run after every change, before anything else.
 | A12 | `/qt realm` (`/dump` prints nothing on this client, so it cannot be used) | **Record the whole output.** For `GetNormalizedRealmName`, a realm string means peer keys are full `Name-Realm`; `nil` or an error means the API is absent and keys fall back to the bare name (still correct, just no better than before). Feeds [Q7](MEASUREMENTS.md#open-questions). |
 | A13 | `/qt channel` while solo | A block of probe lines. `channel we would use:  nil` (solo). **Record whether `LE_PARTY_CATEGORY_INSTANCE` or `Enum.PartyCategory.Instance` exists and its value** — this is the measurement the instance-group fix is waiting on ("Still unverified" item 2). No Lua error even when the constant is absent. |
 | A14 | `/qt sendtest` while solo | Says whether `Enum.SendAddonMessageResult` exists (and lists it if so), then prints the count, value and type of everything the raw send returned. **Record the whole output** — this is the solo half of "Still unverified" item 3 in [`MEASUREMENTS.md`](MEASUREMENTS.md#still-unverified). No Lua error, whatever it prints. |
+| A15 | Open a quest at an NPC, close it, open another | The popup has a **bronze** tooltip border and is filled with the **same parchment as the quest text**, equally dark; its text uses the **same font, size and colour as the quest description**; `/qt parchment` names where the parchment came from. It **slides out from under the quest frame's right edge** while fading in, in about a quarter of a second, ending just under that edge. Switching quests with the popup up does not replay the slide. States are coloured: `yes` green, `no` amber, `on it now` blue, `?` grey; hints (`Not in a group.`) muted brown. **If not:** dark blue-black fill instead of parchment → no parchment found; record the whole `/qt parchment` output. Small or wrong font → no quest font string found (`font borrowed: nil`); record the output too. Plain black box → `BackdropTemplate` is missing here. Popup appears instantly on top of the quest frame → `QuestFrame` did not report a strata/level. Popup slides across the **face** of the quest frame → the level trick does not hold on this client. Record which in MEASUREMENTS.md, "Still unverified" item 4. |
 
 ---
 

@@ -245,7 +245,18 @@ Until this is recorded, `ns.Send` reads the result conservatively: only an expli
 unrecognised are success. The spam run also feeds [Q4](#open-questions) (rate
 limiting), which is the other half of the same question.
 
-**4. Everything requiring two grouped clients.** The first grouped run (sixth run)
+**4. The popup's look.** **Measured 2026-09-24** (screenshot, solo): `BackdropTemplate`
+exists and the tooltip backdrop (`Interface\Tooltips\UI-Tooltip-*`) renders.
+Also seen the same day: the parchment copied from the shown `QuestFrame*Panel` renders
+in the popup, but came out brighter than the quest's own sheet — hence the tint and
+font borrowing that followed. After those, the popup matches the quest frame: same
+sheet shade, the quest title's face for the heading and the description's font and
+size for the text (screenshot, 2026-09-24). So a quest font string and the tint are
+found — but *which* ones, and whether `QuestFrame` reports a strata and level the
+panel can sit under (the slide), are still unrecorded. [`TESTING.md`](TESTING.md) row A15 is the check; record the
+`/qt parchment` output here.
+
+**5. Everything requiring two grouped clients.** The first grouped run (sixth run)
 showed `H`, `Q` and `A` crossing in one direction. Still owed: the reverse direction,
 the comparison with the truth, `/qt roster`, and grouped `/qt sendtest`. Before that,
 every run had been solo (`channel : no (solo)`). The addon-message round-trip, group identity under the secret

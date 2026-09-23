@@ -219,7 +219,9 @@ function M.newEnv(opts)
     install("SlashCmdList", {})
     install("SLASH_QUESTTOGETHERFOREVER1", nil)
     install("QuestTogetherForeverDB", nil)
-    install("QuestFrame", nil)
+    install("QuestFrame", opts.questFrame)   -- nil: no quest frame, as before
+    -- Any other client frames a test needs, by global name.
+    for name, value in pairs(opts.globals or {}) do install(name, value) end
 
     install("strsplit", function(delim, s) return SplitValues(delim, s, 1) end)
 
