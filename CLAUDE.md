@@ -47,7 +47,7 @@ See `docs/ROADMAP.md` and the checklist in `docs/TESTING.md` §B.
 | What was *measured* on the live client; open questions (Q\*) | `docs/MEASUREMENTS.md` |
 | Manual test checklists | `docs/TESTING.md` |
 
-Load order (`QuestWithAFriend.toc`): `Compat → Peers → Protocol → Query → Commands →
+Load order (`QuestTogetherForever.toc`): `Compat → Peers → Protocol → Query → Commands →
 Diagnostics → UI → Core`. Only `Compat` has to be first (it declares the
 registries); the rest may be reordered or deleted freely.
 

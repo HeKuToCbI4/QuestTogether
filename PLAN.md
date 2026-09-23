@@ -1,4 +1,4 @@
-# Quest With A Friend — Design & Implementation Plan
+# Quest Together Forever — Design & Implementation Plan
 
 **Target client:** WoW Forever (Mainline-derived UI architecture)
 **Document status:** Draft v2 — 2026-09-21 (synced with the v0.0.2 code)

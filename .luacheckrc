@@ -19,10 +19,10 @@ ignore = {
 
 -- Globals this addon defines.
 globals = {
-    "SLASH_QUESTWITHFRIEND1",
-    "QuestWithAFriendDB",
+    "SLASH_QUESTTOGETHERFOREVER1",
+    "QuestTogetherForeverDB",
     "SlashCmdList",      -- we add a field to it
-    "_G",                -- _G.QuestWithAFriendDB is assigned in Core.lua
+    "_G",                -- _G.QuestTogetherForeverDB is assigned in Core.lua
 }
 
 -- Globals provided by the client that are referenced BY BARE NAME. Anything read
