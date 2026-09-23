@@ -599,4 +599,20 @@ end)
 
 ns.AddHelp("/qt ui", "toggle the status panel")
 
+ns.AddDebugSection("status panel", function(out)
+    out("  shown:            " .. ns.yn(panel:IsShown()))
+    out("  QuestFrame:       " .. ns.yn(_G.QuestFrame)
+        .. "   shown: " .. ns.yn(_G.QuestFrame and _G.QuestFrame:IsShown()))
+    out("  last auto-ask:    quest " .. ns.SafeStr(lastAutoAsk) .. " at " .. ns.SafeStr(lastAutoAskAt))
+    -- Filled in by the parchment look, when that is present.
+    local look = ns.uiParchment
+    if type(look) == "table" and look.source == nil then
+        out("  parchment:        none borrowed yet -- open a quest, then copy again")
+    elseif type(look) == "table" then
+        for _, k in ipairs({ "source", "copied", "tint", "font" }) do
+            out(("  parchment %-7s %s"):format(k, ns.SafeStr(look[k])))
+        end
+    end
+end)
+
 panel:Hide()

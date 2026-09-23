@@ -146,13 +146,15 @@ one area cannot ripple into another.
 | `Protocol.lua` | Transport layer | `PREFIX`, message grammar, `Send`, `ParseMessage` (pure), `HandleAddonMessage`, prefix registration |
 | `Query.lua` | UI layer (text) | `ns.Ask`, the pending asks keyed by quest ID, the live lines and the summary |
 | `Commands.lua` | UI layer (text) | `/qt ask`, `/qt ping`, `/qt status`, `/qt help` |
+| `Config.lua` | UI layer (panel) | Settings (`ns.GetSetting` / `ns.SetSetting`), the Options panel, `/qt config`, the debug report (`/qt debug`) |
 | `Diagnostics.lua` | — | Solo verification commands. **Deletable** — see below. |
 | `UI.lua` | UI layer (panel) | The status popup, quest-frame show/hide hook, silent auto-ask on `QUEST_DETAIL` |
 | `Core.lua` | Wiring | Bootstrap, event frame, slash dispatch |
 
-Load order is `Compat → Peers → Protocol → Query → Commands → Diagnostics → UI →
-Core`, as listed in the `.toc`. Only `Compat.lua` has to be first: it declares the
-registries (`ns.commands`, `ns.OnAnswer`, `ns.AddHelp`) the others add themselves to.
+Load order is `Compat → Peers → Protocol → Query → Commands → Config → Diagnostics →
+UI → Core`, as listed in the `.toc`. Only `Compat.lua` has to be first: it declares the
+registries (`ns.commands`, `ns.OnAnswer`, `ns.AddHelp`, `ns.AddDebugSection`) the others
+add themselves to.
 
 The component diagram above is the **target**. Not yet built: the send queue,
 throttling and coalescing (`ns.Send` is a direct call), the `.log{}` peer dataset,

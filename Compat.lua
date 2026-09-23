@@ -14,9 +14,9 @@ The fallbacks below are therefore dead code on this client. They are kept becaus
 the surface may still shift -- but this is a recorded measurement, not a hedge.
 
 Also home to the primitives every other module assumes: the secret-value guard,
-the safe formatter, Print, the one peer-key function (ns.PeerKey) -- and the two
-registries (answer listeners, help lines) through which the other modules announce
-themselves. Peer identity lives here precisely because every module has to agree on
+the safe formatter, Print, the one peer-key function (ns.PeerKey) -- and the
+registries (answer listeners, help lines, debug-report sections) through which the
+other modules announce themselves. Peer identity lives here precisely because every module has to agree on
 it -- two key-building rules would silently split the registry in half.
 
 Load-order note: modules communicate through `ns` and must only ever CALL each
@@ -56,10 +56,12 @@ local ADDON_NAME, ns = ...
 
 ---@class QT.Namespace
 ---@field api table<string, function?>       resolved client API; any entry may be nil
+---@field apiKeys string[]                    every key ns.api can hold, present or not
 ---@field peers table<string, QT.Peer>       keyed by ns.PeerKey (name + realm, separators dropped)
 ---@field commands table<string, fun(rest: string)>
 ---@field answerListeners (fun(peer: QT.Peer?, questID: number, status: QT.AnswerStatus))[]
 ---@field helpLines QT.HelpLine[]
+---@field debugSections {title: string, fn: fun(out: fun(line: string))}[]
 ---@field PREFIX string
 ---@field PROTOCOL integer
 ---@field REPLY_WINDOW number
@@ -71,6 +73,7 @@ local ADDON_NAME, ns = ...
 
 local C_ChatInfo = rawget(_G, "C_ChatInfo")
 local C_QuestLog = rawget(_G, "C_QuestLog")
+local Settings   = rawget(_G, "Settings")
 
 -- Resolved once at load.
 ns.api = {
@@ -81,6 +84,25 @@ ns.api = {
     getCount    = C_QuestLog and C_QuestLog.GetNumQuestLogEntries,
     idForIdx    = C_QuestLog and C_QuestLog.GetQuestIDForLogIndex,
     logIdxForId = C_QuestLog and C_QuestLog.GetLogIndexForQuestID,
+
+    -- Options window. The modern Settings API (10.0+) first, the InterfaceOptions
+    -- one it replaced second. NOT measured on this client yet: the Options window
+    -- has an AddOns tab (screenshot, 2026-09-24), which is the modern layout.
+    settingsCanvas = Settings and Settings.RegisterCanvasLayoutCategory,
+    settingsAddOn  = Settings and Settings.RegisterAddOnCategory,
+    settingsOpen   = Settings and Settings.OpenToCategory,
+    legacyAddPanel = _G.InterfaceOptions_AddCategory,
+    legacyOpen     = _G.InterfaceOptionsFrame_OpenToCategory,
+    inCombat       = _G.InCombatLockdown,
+}
+
+-- Every key ns.api can hold. An absent API is a nil entry, and a nil entry
+-- vanishes from the table -- but "absent" is exactly what the debug report must
+-- show. tests/test_config.lua checks this list against the table above.
+ns.apiKeys = {
+    "send", "register", "isDone", "getInfo", "getCount", "idForIdx", "logIdxForId",
+    "settingsCanvas", "settingsAddOn", "settingsOpen", "legacyAddPanel", "legacyOpen",
+    "inCombat",
 }
 
 ------------------------------------------------------------------------------
@@ -118,6 +140,19 @@ ns.helpLines = ns.helpLines or {}
 function ns.AddHelp(cmd, text, group)
     if type(cmd) ~= "string" or type(text) ~= "string" then return end
     ns.helpLines[#ns.helpLines + 1] = { cmd = cmd, text = text, group = group }
+end
+
+-- "Copy debug info" (Config.lua) is assembled the same way as /qt help: each
+-- module registers the section IT can report on, so deleting Diagnostics takes
+-- its probes out of the report and leaves the rest intact. A section writes its
+-- lines through `out`; it runs under pcall when the report is built.
+ns.debugSections = ns.debugSections or {}
+
+---@param title string                    section heading in the report
+---@param fn fun(out: fun(line: string))  writes the section's lines
+function ns.AddDebugSection(title, fn)
+    if type(title) ~= "string" or type(fn) ~= "function" then return end
+    ns.debugSections[#ns.debugSections + 1] = { title = title, fn = fn }
 end
 
 ------------------------------------------------------------------------------

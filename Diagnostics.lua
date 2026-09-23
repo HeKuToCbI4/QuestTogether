@@ -24,6 +24,10 @@ What remains probes the questions still open:
   * /qt parchment -- which quest-frame texture the popup borrowed its parchment
     from, and every texture the open quest panel owns (docs/TESTING.md, A15)
 
+All but /qt sendtest also register as sections of "Copy debug info" (Config.lua),
+so one paste carries every reading. Registered, not called: Config does not know
+this file exists.
+
 It owns its own event frame for quest-event tracing, so Core never learns that
 tracing exists. Sharing Core's frame would make this file undeletable.
 
@@ -59,17 +63,19 @@ ns.commands.events = CmdEvents
 -- /qt frames -- which UI objects M4 could hook
 ------------------------------------------------------------------------------
 
-function ns.commands.frames()
+local function FramesProbe(out)
     local names = {
         "QuestLogFrame", "QuestLogFrameScrollFrame", "QuestFrame",
         "QuestFrameDetailPanel", "QuestProgressFrame", "GossipFrame",
         "GameTooltip", "UIParent",
     }
-    ns.Print("frame objects (M4 would hook these):")
+    out("frame objects (M4 would hook these):")
     for _, n in ipairs(names) do
-        ns.Print(("  %-26s %s"):format(n, ns.yn(_G[n])))
+        out(("  %-26s %s"):format(n, ns.yn(_G[n])))
     end
 end
+
+function ns.commands.frames() FramesProbe(ns.Print) end
 
 ------------------------------------------------------------------------------
 -- /qt sendtest -- what does SendAddonMessage actually RETURN on this client?
@@ -148,28 +154,30 @@ local function Call(fn, ...)
     return ns.SafeStr(res)
 end
 
-function ns.commands.channel()
+local function ChannelProbe(out)
     local constant = _G.LE_PARTY_CATEGORY_INSTANCE
     local enum     = _G.Enum
     local enumTbl  = enum and enum.PartyCategory
     local viaEnum  = type(enumTbl) == "table" and enumTbl.Instance or nil
     local category = ns.InstancePartyCategory()
 
-    ns.Print("group channel probe:")
-    ns.Print(("  LE_PARTY_CATEGORY_INSTANCE   %-3s  value = %s"):format(ns.yn(constant ~= nil), ns.SafeStr(constant)))
-    ns.Print(("  Enum.PartyCategory.Instance  %-3s  value = %s"):format(ns.yn(viaEnum ~= nil), ns.SafeStr(viaEnum)))
-    ns.Print(("  IsInGroup                    %-3s"):format(ns.yn(_G.IsInGroup)))
-    ns.Print(("  IsInRaid                     %-3s"):format(ns.yn(_G.IsInRaid)))
+    out("group channel probe:")
+    out(("  LE_PARTY_CATEGORY_INSTANCE   %-3s  value = %s"):format(ns.yn(constant ~= nil), ns.SafeStr(constant)))
+    out(("  Enum.PartyCategory.Instance  %-3s  value = %s"):format(ns.yn(viaEnum ~= nil), ns.SafeStr(viaEnum)))
+    out(("  IsInGroup                    %-3s"):format(ns.yn(_G.IsInGroup)))
+    out(("  IsInRaid                     %-3s"):format(ns.yn(_G.IsInRaid)))
 
     if category == nil then
-        ns.Print("  IsInGroup(<instance>)  ->  not called: no instance category found")
+        out("  IsInGroup(<instance>)  ->  not called: no instance category found")
     else
-        ns.Print(("  IsInGroup(%s)  ->  %s"):format(ns.SafeStr(category), Call(_G.IsInGroup, category)))
+        out(("  IsInGroup(%s)  ->  %s"):format(ns.SafeStr(category), Call(_G.IsInGroup, category)))
     end
-    ns.Print("  IsInGroup()  ->  " .. Call(_G.IsInGroup))
-    ns.Print("  IsInRaid()   ->  " .. Call(_G.IsInRaid))
-    ns.Print("  channel we would use:  " .. ns.SafeStr(ns.GroupChannel()))
+    out("  IsInGroup()  ->  " .. Call(_G.IsInGroup))
+    out("  IsInRaid()   ->  " .. Call(_G.IsInRaid))
+    out("  channel we would use:  " .. ns.SafeStr(ns.GroupChannel()))
 end
+
+function ns.commands.channel() ChannelProbe(ns.Print) end
 
 ------------------------------------------------------------------------------
 -- /qt realm -- what does the client say about the player's realm?
@@ -179,31 +187,33 @@ end
 -- cannot be used to find out. Every line reports what was actually found.
 ------------------------------------------------------------------------------
 
-function ns.commands.realm()
-    ns.Print("realm probe:")
-    ns.Print(("  GetNormalizedRealmName  %-3s  ->  %s"):format(
+local function RealmProbe(out)
+    out("realm probe:")
+    out(("  GetNormalizedRealmName  %-3s  ->  %s"):format(
         ns.yn(_G.GetNormalizedRealmName), Call(_G.GetNormalizedRealmName)))
-    ns.Print(("  GetRealmName            %-3s  ->  %s"):format(
+    out(("  GetRealmName            %-3s  ->  %s"):format(
         ns.yn(_G.GetRealmName), Call(_G.GetRealmName)))
 
     -- Both returns matter: the second is the realm, nil or "" on our own realm.
     for _, api in ipairs({ "UnitName", "UnitFullName" }) do
         local fn = _G[api]
         if not fn then
-            ns.Print(("  %s(\"player\")  ->  no such API"):format(api))
+            out(("  %s(\"player\")  ->  no such API"):format(api))
         else
             local ok, name, realm = pcall(fn, "player")
             if ok then
-                ns.Print(("  %s(\"player\")  ->  %s, %s"):format(api, ns.SafeStr(name), ns.SafeStr(realm)))
+                out(("  %s(\"player\")  ->  %s, %s"):format(api, ns.SafeStr(name), ns.SafeStr(realm)))
             else
-                ns.Print(("  %s(\"player\")  ->  ERROR: %s"):format(api, ns.SafeStr(name)))
+                out(("  %s(\"player\")  ->  ERROR: %s"):format(api, ns.SafeStr(name)))
             end
         end
     end
 
     local key, display = ns.PlayerKey()
-    ns.Print("  our own peer key:  " .. ns.SafeStr(key) .. "   shown as:  " .. ns.SafeStr(display))
+    out("  our own peer key:  " .. ns.SafeStr(key) .. "   shown as:  " .. ns.SafeStr(display))
 end
+
+function ns.commands.realm() RealmProbe(ns.Print) end
 
 ------------------------------------------------------------------------------
 -- /qt roster -- how does the client spell the OTHER group members?
@@ -218,8 +228,8 @@ end
 
 local lastSender = nil   -- raw CHAT_MSG_ADDON sender, untouched
 
-function ns.commands.roster()
-    ns.Print("roster probe:")
+local function RosterProbe(out)
+    out("roster probe:")
     local prefix = (_G.IsInRaid and _G.IsInRaid()) and "raid" or "party"
     local found = 0
     for i = 1, (prefix == "raid") and 40 or 4 do
@@ -231,27 +241,29 @@ function ns.commands.roster()
                 local fn = _G[api]
                 if fn then
                     local ok, name, realm = pcall(fn, unit)
-                    ns.Print(("  %s(\"%s\")  ->  [%s], [%s]"):format(
+                    out(("  %s(\"%s\")  ->  [%s], [%s]"):format(
                         api, unit, ok and ns.SafeStr(name) or "ERROR", ns.SafeStr(realm)))
                     if ok and api == "UnitName" then
                         local key, shown = ns.PeerKey(name, realm)
-                        ns.Print(("      key [%s]  shown as [%s]  known peer: %s"):format(
+                        out(("      key [%s]  shown as [%s]  known peer: %s"):format(
                             ns.SafeStr(key), ns.SafeStr(shown), ns.yn(key and ns.peers[key])))
                     end
                 end
             end
         end
     end
-    if found == 0 then ns.Print("  no other group members -- run this while grouped.") end
+    if found == 0 then out("  no other group members -- run this while grouped.") end
 
     if lastSender == nil then
-        ns.Print("  last addon-message sender: none seen yet (ask the other client to /qt ping)")
+        out("  last addon-message sender: none seen yet (ask the other client to /qt ping)")
     else
         local key, shown = ns.PeerKey(lastSender)
-        ns.Print(("  last addon-message sender: [%s]"):format(ns.SafeStr(lastSender)))
-        ns.Print(("      key [%s]  shown as [%s]"):format(ns.SafeStr(key), ns.SafeStr(shown)))
+        out(("  last addon-message sender: [%s]"):format(ns.SafeStr(lastSender)))
+        out(("      key [%s]  shown as [%s]"):format(ns.SafeStr(key), ns.SafeStr(shown)))
     end
 end
+
+function ns.commands.roster() RosterProbe(ns.Print) end
 
 ------------------------------------------------------------------------------
 -- /qt parchment -- where the popup's parchment came from
@@ -307,6 +319,13 @@ end
 ------------------------------------------------------------------------------
 
 local PROBES = "still-open probes"
+
+-- The same probes, in "Copy debug info" (Config.lua). /qt sendtest is left out on
+-- purpose: it sends a message, and copying a report must not.
+ns.AddDebugSection("frames probe", FramesProbe)
+ns.AddDebugSection("channel probe", ChannelProbe)
+ns.AddDebugSection("realm probe", RealmProbe)
+ns.AddDebugSection("roster probe", RosterProbe)
 
 ns.AddHelp("/qt events", "toggle tracing of quest events and their arguments", PROBES)
 ns.AddHelp("/qt frames", "list the UI objects M4 would hook", PROBES)

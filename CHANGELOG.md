@@ -2,14 +2,23 @@
 
 Version numbers follow the `## Version` field of `QuestTogetherForever.toc`.
 
-## 0.0.3
+## Unreleased
+
+### Added
+- A settings page: Esc → Options → AddOns → Quest Together Forever, or `/qt config`
+  (also `/qt settings`). For now it holds two test checkboxes that do nothing yet.
+- **Copy debug info** on that page, and `/qt debug`: a window with everything the
+  addon knows about itself, your client and your group, selected and ready for
+  Ctrl+C. Paste it into bug reports.
 
 ### Changed
 - The popup now looks like part of the quest frame: a bronze border, the quest's own
   parchment behind text in the quest description's own font, size and colour, and
-  coloured states (`yes` green, `no` amber,
-  `on it now` blue, `?` grey). It slides out from under the quest frame instead of
-  appearing on top of it. New probe `/qt parchment` shows where the parchment came from.
+  coloured states (`yes` green, `no` amber, `on it now` blue, `?` grey). It slides
+  out from under the quest frame instead of appearing on top of it. New probe
+  `/qt parchment` shows where the parchment came from.
+
+## 0.0.3
 
 ### Fixed
 - The popup no longer shows a stale answer. Re-opening a quest asks the group again
