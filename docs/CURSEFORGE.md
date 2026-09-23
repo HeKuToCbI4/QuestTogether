@@ -9,8 +9,9 @@ Edit this file first, then paste into the CurseForge project editor (the descrip
 field renders Markdown).
 
 > **Do not publish yet.** Milestone M0 is open: no addon message has crossed between
-> two real clients, so the core mechanism is unverified. `docs/ROADMAP.md` lists
-> CurseForge packaging under M5, and the project gate forbids going further until the
+> two real clients, so the core mechanism is unverified. The upload tooling is now
+> wired — a pushed tag uploads a build to this (still unlisted) project via the
+> `CF_API_KEY` secret — but the project page itself stays unpublished until the
 > two-client round-trip passes (`docs/TESTING.md` §B). Everything below is written for
 > the day that closes.
 
@@ -53,7 +54,7 @@ A member who hasn't answered, runs a different version, or doesn't have the addo
 shows `?`, worded so you can tell which of those it is. Everyone in your group gets a
 line, whether or not they run the addon.
 
-## What you get today (v0.0.2)
+## What you get today (v0.0.3)
 
 - **Status popup beside the quest frame** — your own completion state, read live from
   the client, and one line per group member.
@@ -86,7 +87,7 @@ That is the whole mechanism, so it is worth stating plainly:
 - **When:** a presence announcement goes out when you enter the world and on group
   changes; a completion answer goes out whenever any group member opens a quest or
   types `/qt`. You are not prompted.
-- **No settings yet.** v0.0.2 has no opt-out — the only way to stop answering is to
+- **No settings yet.** v0.0.3 has no opt-out — the only way to stop answering is to
   disable the addon. Two independent toggles (answer queries / share quest log) are
   planned.
 

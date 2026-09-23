@@ -8,7 +8,7 @@ need it too, or are you about to drag them through content they finished months 
 Quest Together Forever answers that. It asks everyone in your group about the quest you are
 looking at, and shows you who has already completed it.
 
-> **Status:** v0.0.2 — early prototype. Chat-driven, plus a minimal status popup.
+> **Status:** v0.0.3 — early prototype. Chat-driven, plus a minimal status popup.
 > The addon-message round-trip between two real clients is **not yet verified**
 > (see [`docs/TESTING.md`](docs/TESTING.md)). What works today and what is only
 > planned are listed separately [below](#what-it-does).
@@ -31,7 +31,7 @@ prevent.
 
 What you see for a group member:
 
-| Situation | v0.0.2 (today) | Planned |
+| Situation | v0.0.3 (today) | Planned |
 |---|---|---|
 | Peer running the addon, answered | `yes` / `no` / `on it now` | ✓ / ✗ / ◈ glyphs |
 | Peer running the addon, no answer (yet, or timed out) | `?  (no answer)` | `?` with a "no response" hint |
@@ -50,7 +50,7 @@ as "no".
 
 ## What it does
 
-### Works today (v0.0.2)
+### Works today (v0.0.3)
 
 - **Status popup beside the quest frame.** Open a quest at an NPC: the popup shows
   your own completion state (live from the client) and one line per group member,
@@ -143,7 +143,7 @@ buried:
     not sent one recently. Bursts are coalesced into one message every few seconds.
   - A completion answer is sent **automatically** whenever any group member asks
     (their `/qt`, or them simply opening a quest). You are not prompted.
-- **Control: there is none yet.** v0.0.2 has no settings. The only way to stop
+- **Control: there is none yet.** v0.0.3 has no settings. The only way to stop
   answering is to disable the addon — peers then see no entry for you. Two
   independent toggles (answer queries / share quest log) are planned
   ([data model](docs/ARCHITECTURE.md#data-model)) and tracked as an issue.
@@ -235,9 +235,13 @@ QuestTogetherForever/
 
 Push a tag (`git tag vX.Y.Z && git push origin vX.Y.Z`) and
 `.github/workflows/release.yml` packages the addon with the BigWigs packager, attaching
-a zip to a GitHub release. The zip holds only what the client loads — the `.toc` and the
-eight `.lua` files — per `.pkgmeta`. CurseForge upload is still to come (M5); the
-project ID `1706296` is already in the `.toc`.
+a zip to a GitHub release and uploading it to CurseForge. The zip holds only what the
+client loads — the `.toc` and the eight `.lua` files — per `.pkgmeta`.
+
+The CurseForge upload needs one repository secret, `CF_API_KEY`: a CurseForge API
+token (not your password or an Overwolf token) with permission to upload files to
+project `1706296`. Add it under **Settings → Secrets and variables → Actions**, then
+push a tag. Without the secret the upload is skipped and the release is GitHub-only.
 
 ### Load order
 

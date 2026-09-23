@@ -2,7 +2,7 @@
 
 Version numbers follow the `## Version` field of `QuestTogetherForever.toc`.
 
-## Unreleased
+## 0.0.3
 
 ### Fixed
 - The popup no longer shows a stale answer. Re-opening a quest asks the group again
@@ -127,10 +127,11 @@ Version numbers follow the `## Version` field of `QuestTogetherForever.toc`.
   the return convention and to look for a throttle (Q4).
 - `CLAUDE.md`, `.luacheckrc`, `.luarc.json`, `.gitignore`, `tools/linkcheck.py` and a
   GitHub Actions workflow running luacheck, the test suite and the link check.
-- Tag-driven GitHub releases: `.pkgmeta` plus a BigWigs-packager workflow
-  (`.github/workflows/release.yml`) packages a zip of just the addon and attaches it to
-  a GitHub release on every pushed tag. Zip-only for now — CurseForge upload is stubbed
-  out for M5.
+- Tag-driven releases: `.pkgmeta` plus a BigWigs-packager workflow
+  (`.github/workflows/release.yml`) packages a zip of just the addon, attaches it to
+  a GitHub release and uploads it to CurseForge on every pushed tag. The upload needs
+  a `CF_API_KEY` repository secret (a CurseForge API token); without it the release is
+  GitHub-only. Wago upload is still stubbed out.
 - LuaLS type annotations on the public `ns` API (comments only).
 
 ## 0.0.2
