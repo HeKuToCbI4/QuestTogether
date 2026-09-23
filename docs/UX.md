@@ -2,7 +2,7 @@
 
 Target presentation. Mostly planned; the "as built" note says what exists.
 
-> Part of the Quest With A Friend design docs — index: [`PLAN.md`](../PLAN.md). Sections are
+> Part of the Quest Together Forever design docs — index: [`PLAN.md`](../PLAN.md). Sections are
 > marked **Implemented**, **Partially implemented** or **Planned**; for current
 > behaviour the code is authoritative.
 
@@ -14,7 +14,7 @@ Target presentation. Mostly planned; the "as built" note says what exists.
 > popup beside the quest frame, toggled with `/qt ui` — `/qt` itself *asks*. It prints
 > quest IDs rather than titles and words ("yes" / "no" / "on it now" / "?") rather
 > than glyphs. It *does* list the whole group roster, and it distinguishes "Not in a
-> group." from "None of your group has Quest With A Friend." as the table below specifies.
+> group." from "None of your group has Quest Together Forever." as the table below specifies.
 
 ### Primary surface — party status panel
 
@@ -50,7 +50,7 @@ separable without relying on colour perception:
 - **NPC quest lists** — the same annotation applied to every offered quest, so a
   player can pick the one the group actually needs. All IDs on screen are requested
   in a single coalesced `QREQ`.
-- **Tooltips** — quest tooltips gain a "Quest With A Friend" section. This is the
+- **Tooltips** — quest tooltips gain a "Quest Together Forever" section. This is the
   lowest-risk integration (tooltip hooks are stable) and likely becomes the
   workhorse surface.
 
@@ -59,7 +59,7 @@ separable without relying on colour perception:
 | State | Presentation |
 |---|---|
 | Solo | Panel says "Not in a group." No requests are sent. |
-| No peers have the addon | Every member `?`, with a one-line hint: "None of your group has Quest With A Friend." |
+| No peers have the addon | Every member `?`, with a one-line hint: "None of your group has Quest Together Forever." |
 | Member without the addon | `?  (no addon heard from)` — *implemented* (words, not a tooltip). |
 | Peer outdated | `?` for that member, tooltip explains the version mismatch. |
 | Request in flight | Brief spinner/ellipsis, resolving to a real state within 3 s. |

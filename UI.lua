@@ -78,7 +78,7 @@ end
 
 local function Update()
     local qid = ns.LocalQuestID()
-    local lines = { "|cff33ff99Quest With A Friend|r" }
+    local lines = { "|cff33ff99Quest Together Forever|r" }
 
     if not qid then
         lines[#lines + 1] = "No quest open."
@@ -92,7 +92,7 @@ local function Update()
         local rows = ns.PeerLines(qid)
         if #rows == 0 then
             if ns.GroupChannel() then
-                lines[#lines + 1] = "None of your group has Quest With A Friend."
+                lines[#lines + 1] = "None of your group has Quest Together Forever."
             else
                 lines[#lines + 1] = "Not in a group."
             end

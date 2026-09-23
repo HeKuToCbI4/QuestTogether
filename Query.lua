@@ -44,7 +44,7 @@ local function Report(questID)
         -- Nothing to list has two very different causes; ns.GroupChannel tells
         -- them apart (wording from docs/UX.md).
         if ns.GroupChannel() then
-            ns.Print("None of your group has Quest With A Friend.")
+            ns.Print("None of your group has Quest Together Forever.")
         else
             ns.Print("Not in a group.")
         end

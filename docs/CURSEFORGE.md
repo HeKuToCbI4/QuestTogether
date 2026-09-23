@@ -1,8 +1,8 @@
 # CurseForge project description
 
-Draft text for the CurseForge project page. The published name is **Quest With A
-Friend**, matching the addon folder, `.toc` and GitHub repository
-(`quest-with-a-friend-wow-addon`). CurseForge project ID `1706296` (unlisted — the
+Draft text for the CurseForge project page. The published name is **Quest Together
+Forever**, matching the addon folder, `.toc` and GitHub repository
+(`quest-together-forever-wow-addon`). CurseForge project ID `1706296` (unlisted — the
 public page does not resolve yet).
 
 Edit this file first, then paste into the CurseForge project editor (the description
@@ -27,14 +27,14 @@ field renders Markdown).
 
 ## Description
 
-# Quest With A Friend
+# Quest Together Forever
 
 **See, before you pull, who in your party has already done this quest.**
 
 You're grouped with a friend. You walk up to an NPC and there's a quest. Do they need
 it too, or are you about to drag them through content they finished months ago?
 
-Quest With A Friend asks your group about the quest you're looking at and shows you who
+Quest Together Forever asks your group about the quest you're looking at and shows you who
 has already completed it — right next to the quest frame, without anyone typing
 anything.
 
@@ -108,7 +108,7 @@ commands to exist purely for measuring the client.
 
 ## Links
 
-- Source and full design docs: https://github.com/HeKuToCbI4/quest-with-a-friend-wow-addon
+- Source and full design docs: https://github.com/HeKuToCbI4/quest-together-forever-wow-addon
 - Issues and feedback are welcome there — especially if you can run it with a full
   group and tell us what the panel showed.
 
@@ -116,16 +116,20 @@ commands to exist purely for measuring the client.
 
 ## Naming
 
-The addon is named **Quest With A Friend**. The folder, the `.toc` filename and
-`## Title` were renamed together from `QuestTogether`, in one change — the client
-loads `<FolderName>.toc` and silently skips the addon when the two differ (this
-already happened once: `QuestWithFirends.toc` was an early stub, and the folder was
-renamed from `WowQuestAddon` for the same reason). The GitHub repository is now
-named `quest-with-a-friend-wow-addon`.
+The addon is named **Quest Together Forever**, matching the GitHub repository
+`quest-together-forever-wow-addon`. The folder, the `.toc` filename and `## Title`
+always move together, in one change — the client loads `<FolderName>.toc` and
+silently skips the addon when the two differ (this already happened once:
+`QuestWithFirends.toc` was an early stub, and the folder was renamed from
+`WowQuestAddon` for the same reason).
 
-`SavedVariables` is now `QuestWithAFriendDB`. It is unrelated to the display name,
-but was renamed alongside everything else because v0.0.2 saves nothing yet; renaming
-it later would silently drop people's saved data.
+History: `QuestTogether` → `QuestWithAFriend` ("Quest With A Friend", shipped in the
+v0.0.2 GitHub release zip) → `QuestTogetherForever`. Anyone who installed the v0.0.2
+zip must delete the old `QuestWithAFriend` folder, or both copies load.
+
+`SavedVariables` is now `QuestTogetherForeverDB`. It is unrelated to the display name,
+but was renamed alongside everything else because nothing is saved yet; renaming it
+later would silently drop people's saved data.
 
 Do not rename again after the first upload — a folder that changes name after people
 have installed it loads twice and double-answers.

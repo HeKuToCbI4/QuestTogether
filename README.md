@@ -1,11 +1,11 @@
-# Quest With A Friend
+# Quest Together Forever
 
 > **See, before you pull, who in your party has already done this quest.**
 
 You're grouped with a friend. You walk up to an NPC and there's a quest. Do they
 need it too, or are you about to drag them through content they finished months ago?
 
-Quest With A Friend answers that. It asks everyone in your group about the quest you are
+Quest Together Forever answers that. It asks everyone in your group about the quest you are
 looking at, and shows you who has already completed it.
 
 > **Status:** v0.0.2 — early prototype. Chat-driven, plus a minimal status popup.
@@ -18,7 +18,7 @@ looking at, and shows you who has already completed it.
 ## How it works, in one paragraph
 
 Quest completion is stored server-side and is never sent to other players' clients,
-so there is nothing to query about a groupmate's quest history. Quest With A Friend works
+so there is nothing to query about a groupmate's quest history. Quest Together Forever works
 the only way it can: **each client answers questions about its own character**, over
 addon-to-addon messages, within the group.
 
@@ -38,7 +38,7 @@ What you see for a group member:
 | Peer on an incompatible protocol revision | `?  (incompatible addon version)` | same, with an "outdated" hint |
 | Peer **not** running the addon | `?  (no addon heard from)` | `?` with a "no addon" hint |
 | Peer who has left the group | Dropped on roster change | same |
-| Nobody else in the group has the addon | Every member `?`, above the hint "None of your group has Quest With A Friend." | same |
+| Nobody else in the group has the addon | Every member `?`, above the hint "None of your group has Quest Together Forever." | same |
 | You're solo | Popup shows your own state only, under "Not in a group." | same |
 
 The list is driven by the **group roster**, so every member of your group gets a
@@ -78,18 +78,18 @@ Specified in [`docs/UX.md`](docs/UX.md#ux-specification); none of this exists ye
 
 ## Install
 
-Copy `QuestWithAFriend.toc` and the `.lua` files it lists into
+Copy `QuestTogetherForever.toc` and the `.lua` files it lists into
 
 ```
-<World of Warcraft>\_classic_beta_\Interface\AddOns\QuestWithAFriend\
+<World of Warcraft>\_classic_beta_\Interface\AddOns\QuestTogetherForever\
 ```
 
-The folder **must** be named `QuestWithAFriend` — the client loads `<FolderName>.toc`
+The folder **must** be named `QuestTogetherForever` — the client loads `<FolderName>.toc`
 and nothing else, and fails silently when they differ. The path was confirmed on the
 live beta client on 2026-09-21 ([Q2](docs/MEASUREMENTS.md#open-questions)); the
 `_classic_beta_` part will change when the game leaves beta.
 
-Then `/reload`, and enable **Quest With A Friend** in the AddOns list.
+Then `/reload`, and enable **Quest Together Forever** in the AddOns list.
 
 ---
 
@@ -127,7 +127,7 @@ Peers that never answer stay `?` — never "no".
 
 ## Privacy
 
-Quest With A Friend broadcasts information about your character to the people you group
+Quest Together Forever broadcasts information about your character to the people you group
 with. That is the entire mechanism, so it deserves to be said out loud rather than
 buried:
 
@@ -154,7 +154,7 @@ Nothing is transmitted to any third party, no server, no analytics.
 
 ## Compatibility
 
-Quest With A Friend is built for **WoW Forever**. Verified against the live client on
+Quest Together Forever is built for **WoW Forever**. Verified against the live client on
 2026-09-20 (version `1.60.1`, build `69893`, `tocversion` `16001`):
 
 - The full modern addon API is available — `C_ChatInfo`, `C_QuestLog`, `C_GossipInfo`,
@@ -197,8 +197,8 @@ protocol itself is flavor-agnostic and a shim is plausible later.
 ## For developers
 
 ```
-QuestWithAFriend/
-├── QuestWithAFriend.toc    # filename MUST equal the folder name
+QuestTogetherForever/
+├── QuestTogetherForever.toc  # filename MUST equal the folder name
 ├── Compat.lua           # client API surface, secret guards, the completion oracle
 ├── Peers.lua            # peer registry; home of the tri-state invariant
 ├── Protocol.lua         # wire format and transport

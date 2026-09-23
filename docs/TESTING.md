@@ -6,7 +6,7 @@ Everything below is what it cannot reach: the client itself. Run these by hand a
 record the results — including the date, client build and any surprising output —
 in [`MEASUREMENTS.md`](MEASUREMENTS.md#measurements-and-open-questions).
 
-Expected chat lines are prefixed with `Quest With A Friend` in green; that prefix is
+Expected chat lines are prefixed with `Quest Together Forever` in green; that prefix is
 omitted below.
 
 ---
@@ -17,7 +17,7 @@ Run after every change, before anything else.
 
 | # | Step | Expected |
 |---|---|---|
-| A1 | `/reload`, then check the AddOns list | **Quest With A Friend** is listed and enabled. No Lua error on load. |
+| A1 | `/reload`, then check the AddOns list | **Quest Together Forever** is listed and enabled. No Lua error on load. |
 | A2 | `/qt help` | Header `v0.0.2 -- commands:` (the version comes from the `.toc`), then `/qt`, `/qt ask <id>`, `/qt ping`, `/qt status`, `/qt help`, `/qt ui`, then `-- still-open probes --` with `/qt events`, `/qt frames`, `/qt channel`, `/qt sendtest`, `/qt realm` and `/qt roster`. |
 | A3 | `/qt ui` | Popup appears: `No quest open.` `/qt ui` again hides it. |
 | A4 | `/qt` with no quest open | `No quest selected. Open a quest at an NPC, or use /qt ask <questID>.` |
@@ -55,7 +55,7 @@ quest `Q2` that B currently has **in their log, uncompleted**.
 | B7 | B: `/qt ask Q1` | B sees A's true state — the reverse direction works. | |
 | B8 | A opens a quest at an NPC | A's popup appears and, without typing anything, fills in B's line (auto-ask). **Chat stays completely silent** on A — no `Asking your group…`, no answer lines, no summary. | Any chat line here is bug #8 back again. |
 | B9 | B: `/reload`. Then A: `/qt ask Q1` | B still answers after the reload. | |
-| B10 | B: disable Quest With A Friend, `/reload`, stay grouped. A: open a quest | A's popup lists B **by name** as `?  (no addon heard from)`. A: `/qt ask Q1` prints, after 3 s, `Quest Q1 -- no answer from:` and the same line for B. | B missing from the list → the roster walk failed; record what `/qt status` shows. |
+| B10 | B: disable Quest Together Forever, `/reload`, stay grouped. A: open a quest | A's popup lists B **by name** as `?  (no addon heard from)`. A: `/qt ask Q1` prints, after 3 s, `Quest Q1 -- no answer from:` and the same line for B. | B missing from the list → the roster walk failed; record what `/qt status` shows. |
 | B11 | Re-enable on B; A: `/qt ask Q1`, then B leaves the group, then A: `/qt ask Q1` again | First ask names B with a real answer; after B leaves, B is gone from the list entirely (not a stale `yes`/`no`). | B still listed → pruning and the registry disagree about the key. |
 | B12 | A opens `Q1` (B's line fills in). B leaves the group, then A re-invites B. A opens `Q1` again. | B is asked again and fills in — not left on `?`. | Stuck on `?` → the auto-ask dedupe is not being cleared on roster change. |
 | B13 | A clicks through 3 different quests quickly (open, close, open the next) | A's popup tracks the quest on screen. Chat stays silent. B answers all three (check with `/qt status` on A: the answer count grows). | |

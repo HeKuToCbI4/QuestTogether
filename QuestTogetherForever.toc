@@ -1,10 +1,10 @@
 ## Interface: 16001
-## Title: Quest With A Friend
+## Title: Quest Together Forever
 ## Notes: See which of your party members have already completed a quest.
 ## Author: HeKuToCbI4
 ## Version: 0.0.2
 ## X-Curse-Project-ID: 1706296
-## SavedVariables: QuestWithAFriendDB
+## SavedVariables: QuestTogetherForeverDB
 
 Compat.lua
 Peers.lua

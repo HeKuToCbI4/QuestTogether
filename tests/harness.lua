@@ -9,7 +9,7 @@ What it does, per test:
   1. saves and replaces the handful of _G names the addon touches -- at load
      time (CreateFrame, UIParent, SlashCmdList) and at call time (C_ChatInfo,
      C_QuestLog, C_Timer, UnitName, IsInGroup, time, issecretvalue, print);
-  2. reads QuestWithAFriend.toc and loads every listed file IN THAT ORDER through
+  2. reads QuestTogetherForever.toc and loads every listed file IN THAT ORDER through
      loadfile, calling each chunk as the client does -- chunk(ADDON_NAME, ns)
      -- with a fresh `ns` table;
   3. hands the test an `env` holding the recorded side effects (env.sent,
@@ -36,12 +36,12 @@ local ROOT
 local function Root()
     if ROOT then return ROOT end
     for _, candidate in ipairs({ "", "../", "../../" }) do
-        if Exists(candidate .. "QuestWithAFriend.toc") then
+        if Exists(candidate .. "QuestTogetherForever.toc") then
             ROOT = candidate
             return ROOT
         end
     end
-    error("cannot find QuestWithAFriend.toc -- run the suite from the repository root")
+    error("cannot find QuestTogetherForever.toc -- run the suite from the repository root")
 end
 
 -- The .toc is the single source of truth for load order, so the suite follows it
@@ -49,14 +49,14 @@ end
 ---@return string[] files
 function M.TocFiles()
     local files = {}
-    for entry in io.lines(Root() .. "QuestWithAFriend.toc") do
+    for entry in io.lines(Root() .. "QuestTogetherForever.toc") do
         -- A fresh local, never the loop variable: Lua 5.5 makes those const.
         local line = entry:gsub("^%s+", ""):gsub("%s+$", "")
         if line ~= "" and line:sub(1, 1) ~= "#" and line:lower():sub(-4) == ".lua" then
             files[#files + 1] = line
         end
     end
-    if #files == 0 then error("no .lua files listed in QuestWithAFriend.toc") end
+    if #files == 0 then error("no .lua files listed in QuestTogetherForever.toc") end
     return files
 end
 
@@ -217,8 +217,8 @@ function M.newEnv(opts)
 
     install("UIParent", NewFrame())
     install("SlashCmdList", {})
-    install("SLASH_QUESTWITHFRIEND1", nil)
-    install("QuestWithAFriendDB", nil)
+    install("SLASH_QUESTTOGETHERFOREVER1", nil)
+    install("QuestTogetherForeverDB", nil)
     install("QuestFrame", nil)
 
     install("strsplit", function(delim, s) return SplitValues(delim, s, 1) end)
@@ -282,7 +282,7 @@ function M.newEnv(opts)
             local path = Root() .. file
             local chunk, loadErr = loadfile(path)
             if not chunk then error("cannot load " .. path .. ": " .. tostring(loadErr), 0) end
-            chunk("QuestWithAFriend", env.ns)   -- exactly how the client calls it
+            chunk("QuestTogetherForever", env.ns)   -- exactly how the client calls it
         end
     end)
     if not ok then

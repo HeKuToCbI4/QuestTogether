@@ -138,7 +138,7 @@ end
 
 ---@param msg any
 function ns.Print(msg)
-    print("|cff33ff99Quest With A Friend|r " .. tostring(msg))
+    print("|cff33ff99Quest Together Forever|r " .. tostring(msg))
 end
 
 ---@param v any
