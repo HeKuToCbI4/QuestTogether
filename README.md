@@ -204,6 +204,7 @@ QuestTogetherForever/
 ├── Protocol.lua         # wire format and transport
 ├── Query.lua            # asking the group about a quest, and reporting answers
 ├── Commands.lua         # user-facing slash commands, incl. /qt help
+├── Config.lua           # settings panel, settings, "Copy debug info"
 ├── Diagnostics.lua      # solo verification tools (deletable before release)
 ├── UI.lua               # the status popup panel
 ├── Core.lua             # bootstrap, events, slash dispatch
@@ -236,7 +237,7 @@ QuestTogetherForever/
 Push a tag (`git tag vX.Y.Z && git push origin vX.Y.Z`) and
 `.github/workflows/release.yml` packages the addon with the BigWigs packager, attaching
 a zip to a GitHub release and uploading it to CurseForge. The zip holds only what the
-client loads — the `.toc` and the eight `.lua` files — per `.pkgmeta`.
+client loads — the `.toc` and the nine `.lua` files — per `.pkgmeta`.
 
 The CurseForge upload needs one repository secret, `CF_API_KEY`: a CurseForge API
 token (not your password or an Overwolf token) with permission to upload files to
@@ -245,7 +246,7 @@ push a tag. Without the secret the upload is skipped and the release is GitHub-o
 
 ### Load order
 
-`Compat → Peers → Protocol → Query → Commands → Diagnostics → UI → Core`, as listed
+`Compat → Peers → Protocol → Query → Commands → Config → Diagnostics → UI → Core`, as listed
 in the `.toc`.
 
 The rule: modules reach each other through `ns` and must only ever **call** across
@@ -253,11 +254,12 @@ module boundaries at runtime. A cross-file call during load is the same
 forward-reference trap that crashed the first prototype.
 
 Only `Compat.lua` has to be first: it declares the registries (`ns.commands`,
-`ns.answerListeners` via `ns.OnAnswer`, `ns.helpLines` via `ns.AddHelp`) that the
+`ns.answerListeners` via `ns.OnAnswer`, `ns.helpLines` via `ns.AddHelp`,
+`ns.debugSections` via `ns.AddDebugSection`) that the
 other modules add themselves to at load. Every other file can be reordered, or
 deleted, without anything else noticing.
 
-### Why these eight files
+### Why these nine files
 
 | Module | Owns | Changes when |
 |---|---|---|
@@ -266,6 +268,7 @@ deleted, without anything else noticing.
 | `Protocol` | Wire format, send/receive | The protocol revision bumps |
 | `Query` | `ns.Ask`, pending asks, the live lines and the summary | Asking or reporting changes |
 | `Commands` | Slash commands that do real work, and `/qt help` | Command UX changes |
+| `Config` | Settings, the settings panel, the debug report | A setting is added |
 | `Diagnostics` | Local verification tools | A new surface needs measuring |
 | `UI` | The status popup panel | The panel's presentation changes |
 | `Core` | Bootstrap and event wiring | Wiring changes |

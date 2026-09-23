@@ -256,7 +256,18 @@ found — but *which* ones, and whether `QuestFrame` reports a strata and level 
 panel can sit under (the slide), are still unrecorded. [`TESTING.md`](TESTING.md) row A15 is the check; record the
 `/qt parchment` output here.
 
-**5. Everything requiring two grouped clients.** The first grouped run (sixth run)
+**5. The Options window and the copy window.** The settings panel registers through
+`Settings.RegisterCanvasLayoutCategory` + `Settings.RegisterAddOnCategory` and opens
+with `Settings.OpenToCategory(id)`; the old `InterfaceOptions_AddCategory` is the
+fallback. The Options window has an **AddOns** tab (screenshot, 2026-09-24), which
+suggests the modern API, but none of it is measured. Neither are the templates
+(`UICheckButtonTemplate`, `UIPanelButtonTemplate`, `UIPanelCloseButton`,
+`UIPanelScrollFrameTemplate`), each created under `pcall` with a plain fallback.
+[`TESTING.md`](TESTING.md) rows A16 and A17 are the check; the report's
+`## settings panel` section says which way the panel got in. Also recorded there:
+whether `CopyToClipboard` exists — the addon does not call it.
+
+**6. Everything requiring two grouped clients.** The first grouped run (sixth run)
 showed `H`, `Q` and `A` crossing in one direction. Still owed: the reverse direction,
 the comparison with the truth, `/qt roster`, and grouped `/qt sendtest`. Before that,
 every run had been solo (`channel : no (solo)`). The addon-message round-trip, group identity under the secret

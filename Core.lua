@@ -4,7 +4,8 @@ Core -- bootstrap, event wiring, slash dispatch.
 Deliberately thin. If this file starts growing, something in it belongs in
 another module.
 
-Load order: Compat -> Peers -> Protocol -> Commands -> Diagnostics -> UI -> Core,
+Load order: Compat -> Peers -> Protocol -> Query -> Commands -> Config -> Diagnostics ->
+UI -> Core,
 as listed in the .toc. Order only matters for definitions; modules reach each other
 through `ns` and must only CALL across module boundaries at runtime. A cross-module
 call during load is the same forward-reference trap that crashed v0.1 (see

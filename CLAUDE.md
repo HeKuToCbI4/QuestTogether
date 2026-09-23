@@ -16,7 +16,7 @@ character over group-only addon messages. Status: v0.0.2 prototype.
    `ns.X` at load is fine; *calling* another module's `ns.Y` at file scope is not —
    it makes `.toc` order load-bearing and fails at runtime, not at load.
    The one exception: registering into the lists `Compat.lua` declares
-   (`ns.OnAnswer`, `ns.AddHelp`, `ns.commands`). `Compat.lua` is first in the
+   (`ns.OnAnswer`, `ns.AddHelp`, `ns.AddDebugSection`, `ns.commands`). `Compat.lua` is first in the
    `.toc`, so those exist before anyone registers, and a registration appends a
    value rather than running another module's behaviour.
 4. **Branch on API presence, never on client version.** This client reports
@@ -48,7 +48,7 @@ See `docs/ROADMAP.md` and the checklist in `docs/TESTING.md` §B.
 | Manual test checklists | `docs/TESTING.md` |
 
 Load order (`QuestTogetherForever.toc`): `Compat → Peers → Protocol → Query → Commands →
-Diagnostics → UI → Core`. Only `Compat` has to be first (it declares the
+Config → Diagnostics → UI → Core`. Only `Compat` has to be first (it declares the
 registries); the rest may be reordered or deleted freely.
 
 The design docs describe a **target**. Sections are tagged *Implemented* / *Planned*.

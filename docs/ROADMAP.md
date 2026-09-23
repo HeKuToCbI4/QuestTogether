@@ -77,7 +77,10 @@ Milestones, the M0 go/no-go gate, risk register and testing strategy.
 - [ ] Quest log row annotations.
 - [ ] NPC gossip/available-quest list annotations (single coalesced request).
 - [ ] Tooltip integration.
-- [ ] Settings panel bound to the privacy toggles.
+- [ ] Settings panel bound to the privacy toggles. *Partial:* the panel exists
+      (Options → AddOns, `/qt config`) with two test checkboxes that do nothing, and a
+      "Copy debug info" button. **Built before the M0 gate closed**, at the user's
+      request: a scaffold only — no setting changes behaviour yet.
 
 ### M5 — Hardening and release · ~2 days
 

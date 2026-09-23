@@ -11,6 +11,7 @@ Peers.lua
 Protocol.lua
 Query.lua
 Commands.lua
+Config.lua
 Diagnostics.lua
 UI.lua
 Core.lua
