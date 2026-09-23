@@ -130,12 +130,12 @@ h.test("on parchment the quest text's font is borrowed too", {
     questFrame = fakeQuestFrame(),
     globals = {
         QuestFrameDetailPanel = fakeParchmentPanel(),
-        QuestInfoDescriptionText = fakeFontString("Fonts\FRIZQT__.TTF", 13, 0, 0, 0),
+        QuestInfoDescriptionText = fakeFontString("Fonts\\FRIZQT__.TTF", 13, 0, 0, 0),
     },
 }, function(env, ns)
     env.localQuest = 783
     ns.commands.ui()
-    h.eq(ns.uiParchment.font, "QuestInfoDescriptionText  Fonts\FRIZQT__.TTF 13", "font source recorded")
+    h.eq(ns.uiParchment.font, "QuestInfoDescriptionText  Fonts\\FRIZQT__.TTF 13", "font source recorded")
 end)
 
 h.test("no quest font on screen: parchment still applies", {
