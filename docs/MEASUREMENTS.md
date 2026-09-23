@@ -259,13 +259,16 @@ panel can sit under (the slide), are still unrecorded. [`TESTING.md`](TESTING.md
 **5. The Options window and the copy window.** The settings panel registers through
 `Settings.RegisterCanvasLayoutCategory` + `Settings.RegisterAddOnCategory` and opens
 with `Settings.OpenToCategory(id)`; the old `InterfaceOptions_AddCategory` is the
-fallback. The Options window has an **AddOns** tab (screenshot, 2026-09-24), which
-suggests the modern API, but none of it is measured. Neither are the templates
-(`UICheckButtonTemplate`, `UIPanelButtonTemplate`, `UIPanelCloseButton`,
-`UIPanelScrollFrameTemplate`), each created under `pcall` with a plain fallback.
-[`TESTING.md`](TESTING.md) rows A16 and A17 are the check; the report's
-`## settings panel` section says which way the panel got in. Also recorded there:
-whether `CopyToClipboard` exists — the addon does not call it.
+fallback.
+
+**Measured 2026-09-24** (the first "Copy debug info" report, solo, client `1.60.1`
+build `69977` — newer than the `69893` of the first run): the panel registered via
+`Settings` (canvas layout), category ID `2`; `InterfaceOptions_AddCategory` and
+`InterfaceOptionsFrame_OpenToCategory` are **absent**. The report was copied out of
+the copy window and pasted, so the multi-line edit box, its selection and Ctrl+C
+work. `CopyToClipboard` **exists** — not called: whether an addon may call it
+without being blocked is unmeasured. Still to confirm by eye: the look of the
+checkbox, button and scroll templates ([`TESTING.md`](TESTING.md) A16).
 
 **6. Everything requiring two grouped clients.** The first grouped run (sixth run)
 showed `H`, `Q` and `A` crossing in one direction. Still owed: the reverse direction,
@@ -286,7 +289,7 @@ rules, and cross-client quest queries all remain open.
 | Q4 | Are addon messages rate-limited differently here? | Open | **The remaining gate.** Needs two grouped clients. `/qt sendtest`, run repeatedly while grouped, is the instrument: a throttle should show up as a changed return value (see "Still unverified" item 2). |
 | Q5 | Do quest frame objects keep Mainline names and structure? | Open | M4 |
 | Q6 | Does the default quest log already show party progress? | **Effectively closed** | No backing API exists ([Q3](#open-questions)), and UI cannot show what no API provides. Confirm visually while grouped. |
-| Q7 | Is `name-realm` a stable peer key? | Open — narrowed | **No, not as a split string:** names can contain a space, and the roster then spells them `First-Last`, indistinguishable from `Name-Realm` (sixth run, [#24](https://github.com/HeKuToCbI4/quest-together-forever-wow-addon/issues/24)). `ns.PeerKey` now builds a split-independent key from name + realm (own realm cut off, spaces and hyphens dropped), instead of the bare name that made two realms collide. `GetNormalizedRealmName` is confirmed to work. Two things are still **unmeasured** on this client: whether `GetNormalizedRealmName` exists (the code falls back to a bare key if not; `/dump` printed nothing, so `/qt realm` is the instrument — fifth run), and what realm suffix `CHAT_MSG_ADDON` actually puts on `sender` for a same-realm and a cross-realm peer. Record both in the two-client test ([TESTING.md §B](TESTING.md#b-two-client-round-trip--the-m0-gate), "Observations"). |
+| Q7 | Is `name-realm` a stable peer key? | Open — narrowed | **No, not as a split string:** names can contain a space, and the roster then spells them `First-Last`, indistinguishable from `Name-Realm` (sixth run, [#24](https://github.com/HeKuToCbI4/quest-together-forever-wow-addon/issues/24)). `ns.PeerKey` now builds a split-independent key from name + realm (own realm cut off, spaces and hyphens dropped), instead of the bare name that made two realms collide. `GetNormalizedRealmName` is confirmed to work. `GetNormalizedRealmName` exists and returns `ClassicBetaPvE`; `UnitFullName("player")` returns the name and that realm, `UnitName("player")` the name and `nil` (debug report, 2026-09-24). Still **unmeasured**: what realm suffix `CHAT_MSG_ADDON` actually puts on `sender` for a same-realm and a cross-realm peer. Record both in the two-client test ([TESTING.md §B](TESTING.md#b-two-client-round-trip--the-m0-gate), "Observations"). |
 
 ---
 

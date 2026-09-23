@@ -122,7 +122,15 @@ ns.AddDebugSection("addon", function(out)
 end)
 
 ns.AddDebugSection("client", function(out)
-    out("  GetBuildInfo:  " .. Call(_G.GetBuildInfo))
+    local gbi = _G.GetBuildInfo
+    local ok, version, build, date, toc = false, nil, nil, nil, nil
+    if gbi then ok, version, build, date, toc = pcall(gbi) end
+    if ok then
+        out(("  client:        %s   build %s   (%s)   toc %s"):format(ns.SafeStr(version),
+            ns.SafeStr(build), ns.SafeStr(date), ns.SafeStr(toc)))
+    else
+        out("  GetBuildInfo:  " .. Call(gbi))
+    end
     out("  GetLocale:     " .. Call(_G.GetLocale))
     out("  date:          " .. Call(_G.date, "%Y-%m-%d %H:%M:%S"))
     local present, absent = {}, {}
