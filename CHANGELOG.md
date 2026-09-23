@@ -123,6 +123,10 @@ Version numbers follow the `## Version` field of `QuestWithAFriend.toc`.
   the return convention and to look for a throttle (Q4).
 - `CLAUDE.md`, `.luacheckrc`, `.luarc.json`, `.gitignore`, `tools/linkcheck.py` and a
   GitHub Actions workflow running luacheck, the test suite and the link check.
+- Tag-driven GitHub releases: `.pkgmeta` plus a BigWigs-packager workflow
+  (`.github/workflows/release.yml`) packages a zip of just the addon and attaches it to
+  a GitHub release on every pushed tag. Zip-only for now — CurseForge upload is stubbed
+  out for M5.
 - LuaLS type annotations on the public `ns` API (comments only).
 
 ## 0.0.2

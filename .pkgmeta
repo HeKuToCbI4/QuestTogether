@@ -1,0 +1,10 @@
+package-as: QuestWithAFriend
+
+ignore:
+  - CHANGELOG.md
+  - CLAUDE.md
+  - PLAN.md
+  - README.md
+  - docs
+  - tests
+  - tools

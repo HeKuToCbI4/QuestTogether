@@ -1,0 +1,33 @@
+name: Release
+
+# Builds a zip and attaches it to a GitHub release whenever a tag is pushed.
+#
+# Uploading to CurseForge / Wago is deliberately left out for now (the M0 gate is
+# not closed). To publish from the same tag later, add these repository secrets
+# and uncomment the matching env lines below:
+#   CF_API_KEY        -> CurseForge (project ID 1706296 is already in the .toc)
+#   WAGO_API_TOKEN    -> Wago Addons
+
+on:
+  push:
+    tags:
+      - "**"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Package and release
+        uses: BigWigsMods/packager@v2
+        env:
+          GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
+          # CF_API_KEY: ${{ secrets.CF_API_KEY }}
+          # WAGO_API_TOKEN: ${{ secrets.WAGO_API_TOKEN }}
