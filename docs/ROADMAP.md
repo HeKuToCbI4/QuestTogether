@@ -88,7 +88,7 @@ Milestones, the M0 go/no-go gate, risk register and testing strategy.
 - [ ] SavedVariables settings persistence with schema migration.
 - [ ] Localisation scaffolding (`enUS` first).
 - [ ] Full bug sweep with two live clients.
-- [ ] CurseForge packaging, version stringing, changelog.
+- [ ] CurseForge packaging (project ID `1706296`), version stringing, changelog.
 
 **Total: ~9–11 focused days to a polished v1.**
 

@@ -2,7 +2,8 @@
 
 Draft text for the CurseForge project page. The published name is **Quest With A
 Friend**, matching the addon folder, `.toc` and GitHub repository
-(`quest-with-a-friend-wow-addon`).
+(`quest-with-a-friend-wow-addon`). CurseForge project ID `1706296` (unlisted — the
+public page does not resolve yet).
 
 Edit this file first, then paste into the CurseForge project editor (the description
 field renders Markdown).
