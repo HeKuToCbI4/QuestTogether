@@ -11,7 +11,7 @@ Target presentation. Mostly planned; the "as built" note says what exists.
 ## UX specification
 
 > **Status: Planned.** As built, v0.0.2 has one surface: a fixed (not movable) text
-> popup beside the quest frame, toggled with `/qt ui` — `/qt` itself *asks*. It prints
+> popup beside the quest frame, toggled with `/qtf ui` — `/qtf` itself *asks*. It prints
 > quest IDs rather than titles and words ("yes" / "no" / "on it now" / "?") rather
 > than glyphs. It *does* list the whole group roster, and it distinguishes "Not in a
 > group." from "None of your group has Quest Together Forever." as the table below specifies.
@@ -20,7 +20,7 @@ Target presentation. Mostly planned; the "as built" note says what exists.
 
 ### Primary surface — party status panel
 
-A small movable panel toggled with `/qt`. For the quest currently under
+A small movable panel toggled with `/qtf`. For the quest currently under
 consideration, it lists each group member:
 
 ```

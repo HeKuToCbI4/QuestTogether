@@ -3,7 +3,7 @@ Diagnostics -- in-game verification for the questions still open.
 
 This entire file is meant to be deletable before release: delete it, drop its line
 from the .toc, and nothing else changes. Its commands register into ns.commands
-and their help lines into ns.helpLines, so /qt help simply stops listing them.
+and their help lines into ns.helpLines, so /qtf help simply stops listing them.
 Nothing anywhere depends on this file.
 
 It exists because Forever is a beta client whose API surface and event payloads are
@@ -13,18 +13,18 @@ The one-shot measurement probes were retired on 2026-09-21 once their answers we
 recorded in docs/MEASUREMENTS.md (API presence, the oracle, the GetInfo schema).
 What remains probes the questions still open:
 
-  * /qt events -- what arguments quest events actually carry (still unverified)
-  * /qt frames -- which Mainline UI frames exist, for M4's hooks
-  * /qt channel -- whether this client knows instance (LFG) groups, and which
+  * /qtf events -- what arguments quest events actually carry (still unverified)
+  * /qtf frames -- which Mainline UI frames exist, for M4's hooks
+  * /qtf channel -- whether this client knows instance (LFG) groups, and which
     channel ns.GroupChannel would pick right now (still unverified)
-  * /qt sendtest -- what SendAddonMessage returns here (feeds Q4)
-  * /qt realm -- what the client says about the player's realm (feeds Q7)
-  * /qt roster -- how the client spells the OTHER group members, and the raw
+  * /qtf sendtest -- what SendAddonMessage returns here (feeds Q4)
+  * /qtf realm -- what the client says about the player's realm (feeds Q7)
+  * /qtf roster -- how the client spells the OTHER group members, and the raw
     sender of the last addon message (issue #24, feeds Q7)
-  * /qt parchment -- which quest-frame texture the popup borrowed its parchment
+  * /qtf parchment -- which quest-frame texture the popup borrowed its parchment
     from, and every texture the open quest panel owns (docs/TESTING.md, A15)
 
-All but /qt sendtest also register as sections of "Copy debug info" (Config.lua),
+All but /qtf sendtest also register as sections of "Copy debug info" (Config.lua),
 so one paste carries every reading. Registered, not called: Config does not know
 this file exists.
 
@@ -40,7 +40,7 @@ local ADDON_NAME, ns = ...
 ns.commands = ns.commands or {}
 
 ------------------------------------------------------------------------------
--- /qt events -- trace quest events with their real arguments
+-- /qtf events -- trace quest events with their real arguments
 ------------------------------------------------------------------------------
 
 ns.tracing = false
@@ -60,7 +60,7 @@ end
 ns.commands.events = CmdEvents
 
 ------------------------------------------------------------------------------
--- /qt frames -- which UI objects M4 could hook
+-- /qtf frames -- which UI objects M4 could hook
 ------------------------------------------------------------------------------
 
 local function FramesProbe(out)
@@ -78,7 +78,7 @@ end
 function ns.commands.frames() FramesProbe(ns.Print) end
 
 ------------------------------------------------------------------------------
--- /qt sendtest -- what does SendAddonMessage actually RETURN on this client?
+-- /qtf sendtest -- what does SendAddonMessage actually RETURN on this client?
 --
 -- Measured solo 2026-09-21: this client returns a numeric
 -- Enum.SendAddonMessageResult code (5 = NotInGroup). The success value, grouped,
@@ -140,7 +140,7 @@ function ns.commands.sendtest()
 end
 
 ------------------------------------------------------------------------------
--- /qt channel -- does this client know instance (LFG) groups?
+-- /qtf channel -- does this client know instance (LFG) groups?
 --
 -- Runs solo. The useful reading is taken three times -- alone, in a normal party
 -- and in an LFG group -- and recorded in docs/MEASUREMENTS.md. Nothing here
@@ -180,7 +180,7 @@ end
 function ns.commands.channel() ChannelProbe(ns.Print) end
 
 ------------------------------------------------------------------------------
--- /qt realm -- what does the client say about the player's realm?
+-- /qtf realm -- what does the client say about the player's realm?
 --
 -- Peer keys are "Name-Realm" (ns.PeerKey) and lean on GetNormalizedRealmName,
 -- which is unmeasured here -- and /dump printed nothing on this client, so it
@@ -216,14 +216,14 @@ end
 function ns.commands.realm() RealmProbe(ns.Print) end
 
 ------------------------------------------------------------------------------
--- /qt roster -- how does the client spell the OTHER group members?
+-- /qtf roster -- how does the client spell the OTHER group members?
 --
 -- Issue #24: a name with a space reached us as "Itemys Targaryen" in an addon
 -- message and as "Itemys-Targaryen" from the roster. ns.PeerKey no longer cares
 -- which, but the exact shapes are still unmeasured -- this prints them, next to
 -- the raw sender of the last addon message we saw on our prefix.
 --
--- Run it while grouped, after the other client has sent anything (/qt ping).
+-- Run it while grouped, after the other client has sent anything (/qtf ping).
 ------------------------------------------------------------------------------
 
 local lastSender = nil   -- raw CHAT_MSG_ADDON sender, untouched
@@ -255,7 +255,7 @@ local function RosterProbe(out)
     if found == 0 then out("  no other group members -- run this while grouped.") end
 
     if lastSender == nil then
-        out("  last addon-message sender: none seen yet (ask the other client to /qt ping)")
+        out("  last addon-message sender: none seen yet (ask the other client to /qtf ping)")
     else
         local key, shown = ns.PeerKey(lastSender)
         out(("  last addon-message sender: [%s]"):format(ns.SafeStr(lastSender)))
@@ -266,7 +266,7 @@ end
 function ns.commands.roster() RosterProbe(ns.Print) end
 
 ------------------------------------------------------------------------------
--- /qt parchment -- where the popup's parchment came from
+-- /qtf parchment -- where the popup's parchment came from
 ------------------------------------------------------------------------------
 
 local QUEST_PANELS = {
@@ -320,20 +320,20 @@ end
 
 local PROBES = "still-open probes"
 
--- The same probes, in "Copy debug info" (Config.lua). /qt sendtest is left out on
+-- The same probes, in "Copy debug info" (Config.lua). /qtf sendtest is left out on
 -- purpose: it sends a message, and copying a report must not.
 ns.AddDebugSection("frames probe", FramesProbe)
 ns.AddDebugSection("channel probe", ChannelProbe)
 ns.AddDebugSection("realm probe", RealmProbe)
 ns.AddDebugSection("roster probe", RosterProbe)
 
-ns.AddHelp("/qt events", "toggle tracing of quest events and their arguments", PROBES)
-ns.AddHelp("/qt frames", "list the UI objects M4 would hook", PROBES)
-ns.AddHelp("/qt channel", "probe instance-group detection and the channel we would use", PROBES)
-ns.AddHelp("/qt sendtest", "print what SendAddonMessage returns here (run solo and grouped)", PROBES)
-ns.AddHelp("/qt realm", "print what the client reports as your name and realm", PROBES)
-ns.AddHelp("/qt roster", "print how the client spells the other group members (run grouped)", PROBES)
-ns.AddHelp("/qt parchment", "print where the popup's parchment came from (quest open)", PROBES)
+ns.AddHelp("/qtf events", "toggle tracing of quest events and their arguments", PROBES)
+ns.AddHelp("/qtf frames", "list the UI objects M4 would hook", PROBES)
+ns.AddHelp("/qtf channel", "probe instance-group detection and the channel we would use", PROBES)
+ns.AddHelp("/qtf sendtest", "print what SendAddonMessage returns here (run solo and grouped)", PROBES)
+ns.AddHelp("/qtf realm", "print what the client reports as your name and realm", PROBES)
+ns.AddHelp("/qtf roster", "print how the client spells the other group members (run grouped)", PROBES)
+ns.AddHelp("/qtf parchment", "print where the popup's parchment came from (quest open)", PROBES)
 
 ------------------------------------------------------------------------------
 -- Event tracing frame
@@ -365,7 +365,7 @@ traceFrame:SetScript("OnEvent", function(_, event, arg1, arg2, arg3, arg4)
     ns.Print(table.concat(parts, "   "))
 end)
 
--- A second frame, for /qt roster: remember the raw sender of the last addon
+-- A second frame, for /qtf roster: remember the raw sender of the last addon
 -- message on OUR prefix. Its own frame so the quest tracing above stays as it was.
 local senderFrame = CreateFrame("Frame")
 senderFrame:RegisterEvent("CHAT_MSG_ADDON")

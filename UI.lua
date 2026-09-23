@@ -6,7 +6,7 @@ whether they have completed it. Kept small: one Frame, a title, one body
 FontString, no dragging.
 
   * shows when the quest frame opens, hides when it closes
-  * /qt ui forces it open solo, so the whole thing is testable without a group
+  * /qtf ui forces it open solo, so the whole thing is testable without a group
 
 Look: the stock tooltip border tinted bronze, filled with the quest frame's OWN
 parchment -- copied at show time from whichever quest panel is on screen, so it is
@@ -16,7 +16,7 @@ read from the quest frame's font strings the same way. It sits one frame
 level BELOW the quest frame and slides out from under its right edge while fading
 in. Every piece is optional: no parchment found keeps the dark tooltip fill, no
 BackdropTemplate falls back to a plain dark texture, no quest frame on screen
-means no slide (docs/TESTING.md, A7 and A15; /qt parchment shows what was found).
+means no slide (docs/TESTING.md, A7 and A15; /qtf parchment shows what was found).
 
 States are coloured as in docs/UX.md (green / amber / blue / grey), but the words
 stay: colour is never the only carrier of a state.
@@ -26,7 +26,7 @@ the rest of the group from ns.PeerLines, which joins the group roster against th
 Peers registry (tri-state: yes / no / unknown). Every group member gets a line,
 whether or not they run the addon. Rendering never asks; the one place this file
 does ask is the auto-ask on QUEST_DETAIL below, which goes through ns.Ask exactly
-as /qt does -- but silently, because this panel is already showing what chat would
+as /qtf does -- but silently, because this panel is already showing what chat would
 otherwise repeat. Until a peer answers they show "?" and stay "?" -- never
 flipping to "no" (the one mistake this addon exists to prevent).
 
@@ -164,7 +164,7 @@ text:SetSpacing(2)
 -- Parchment: borrowed from the quest frame, never guessed
 ------------------------------------------------------------------------------
 
--- What the last search found, for /qt parchment (Diagnostics). Display only.
+-- What the last search found, for /qtf parchment (Diagnostics). Display only.
 ns.uiParchment = { source = nil, copied = nil, tint = nil, font = nil }
 
 -- The crop of the source texture, and how big that texture is on screen, so the
@@ -373,7 +373,7 @@ local function PlaceAt(x)
     panel:SetPoint("TOPLEFT", _G.QuestFrame, "TOPRIGHT", x, SLIDE_Y)
 end
 
--- No quest frame on screen (/qt ui while solo): a fixed spot, above everything.
+-- No quest frame on screen (/qtf ui while solo): a fixed spot, above everything.
 local function PlaceStandalone()
     panel:SetScript("OnUpdate", nil)
     panel:ClearAllPoints()
@@ -462,7 +462,7 @@ local function Update()
     if not qid then
         questLabel:SetText("")
         lines[#lines + 1] = Hint("No quest open.")
-        lines[#lines + 1] = Hint("Open a quest, or /qt ask <id>.")
+        lines[#lines + 1] = Hint("Open a quest, or /qtf ask <id>.")
     else
         questLabel:SetText(Hint("Quest " .. qid))
         lines[#lines + 1] = Row("You", DescribeSelf(qid))
@@ -498,7 +498,7 @@ function ns.commands.ui()
         if QuestFrameShown() then RefreshLook(); SlideOut() else PlaceStandalone() end
         panel:Show()
         Update()
-        ns.Print("Status panel shown. /qt ui toggles it.")
+        ns.Print("Status panel shown. /qtf ui toggles it.")
     end
 end
 
@@ -520,7 +520,7 @@ end
 
 -- The quest frame's own show/hide is the most reliable "a quest is open" signal
 -- we have on this beta client. Hook it when the frame keeps its Mainline name
--- (docs/MEASUREMENTS.md, Q5, is still open); /qt ui is the fallback when it does
+-- (docs/MEASUREMENTS.md, Q5, is still open); /qtf ui is the fallback when it does
 -- not.
 if _G.QuestFrame then
     _G.QuestFrame:HookScript("OnShow", function() ShowPanel() end)
@@ -531,7 +531,7 @@ if _G.QuestFrame then
 end
 
 -- Auto-ask: opening a quest asks the group about it, so the panel populates
--- without a manual /qt. Silent -- the answers land in the panel in front of the
+-- without a manual /qtf. Silent -- the answers land in the panel in front of the
 -- user, and printing them as well meant a burst of chat for every quest opened.
 --
 -- It fires for every way a quest can be on screen: offered (QUEST_DETAIL), in
@@ -588,7 +588,7 @@ ev:SetScript("OnEvent", function(_, event)
 end)
 
 ------------------------------------------------------------------------------
--- Registrations: repaint on answers, and the /qt ui help line
+-- Registrations: repaint on answers, and the /qtf ui help line
 ------------------------------------------------------------------------------
 
 -- One listener among however many are registered: the panel repaints, and
@@ -597,7 +597,7 @@ ns.OnAnswer(function()
     if panel:IsShown() then Update() end
 end)
 
-ns.AddHelp("/qt ui", "toggle the status panel")
+ns.AddHelp("/qtf ui", "toggle the status panel")
 
 ns.AddDebugSection("status panel", function(out)
     out("  shown:            " .. ns.yn(panel:IsShown()))

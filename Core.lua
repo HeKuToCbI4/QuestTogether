@@ -22,7 +22,7 @@ local ADDON_NAME, ns = ...
 -- owns the slash command itself.
 ------------------------------------------------------------------------------
 
-SLASH_QUESTTOGETHERFOREVER1 = "/qt"
+SLASH_QUESTTOGETHERFOREVER1 = "/qtf"
 SlashCmdList["QUESTTOGETHERFOREVER"] = function(input)
     local cmd, rest = (input or ""):match("^%s*(%S*)%s*(.-)%s*$")
     cmd = (cmd or ""):lower()

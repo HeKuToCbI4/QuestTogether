@@ -62,11 +62,11 @@ line, whether or not they run the addon.
   quest, and again after someone joins your group.
 - **"On it now"** — a member who has the quest in their log but hasn't finished it is
   reported separately from a plain "no".
-- **Chat mode** — `/qt` asks on demand and reports answers in chat.
+- **Chat mode** — `/qtf` asks on demand and reports answers in chat.
 - **Version check** — peers on an incompatible protocol revision are marked as such and
   never answered or parsed.
 
-Open a quest and the popup appears. `/qt help` lists the commands.
+Open a quest and the popup appears. `/qtf help` lists the commands.
 
 ## Requirements
 
@@ -86,7 +86,7 @@ That is the whole mechanism, so it is worth stating plainly:
   Never a public channel, never anyone outside the group.
 - **When:** a presence announcement goes out when you enter the world and on group
   changes; a completion answer goes out whenever any group member opens a quest or
-  types `/qt`. You are not prompted.
+  types `/qtf`. You are not prompted.
 - **No settings yet.** v0.0.3 has no opt-out — the only way to stop answering is to
   disable the addon. Two independent toggles (answer queries / share quest log) are
   planned.

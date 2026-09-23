@@ -94,5 +94,5 @@ rows of `docs/TESTING.md` that must be re-run, and add rows for new behaviour.
   must be added to `.luacheckrc`.
 - Facts about the client are **measured, not inferred**: record how and when in
   `docs/MEASUREMENTS.md`. Your training data does not cover this client — do not
-  assume an API exists or behaves as on Retail/Classic; ask for a `/qt` probe instead.
+  assume an API exists or behaves as on Retail/Classic; ask for a `/qtf` probe instead.
 - User-facing changes get a line in `CHANGELOG.md`. The version lives in the `.toc`.

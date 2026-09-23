@@ -1,11 +1,11 @@
 --[[----------------------------------------------------------------------------
 Config -- the settings panel, the settings themselves, and "Copy debug info".
 
-  * Options -> AddOns -> Quest Together Forever, and /qt config (or /qt settings)
+  * Options -> AddOns -> Quest Together Forever, and /qtf config (or /qtf settings)
     to open it directly.
   * Two TEST checkboxes. They are stored and restored, and nothing reads them:
     this is the scaffold the real toggles (issue #9) will go into.
-  * A "Copy debug info" button, and /qt debug: a window with everything the addon
+  * A "Copy debug info" button, and /qtf debug: a window with everything the addon
     knows about itself and the client, selected, ready for Ctrl+C. An addon cannot
     put text on the clipboard itself, so the user presses the key.
 
@@ -372,7 +372,7 @@ Register()
 local function OpenSettings()
     local api = ns.api
     if api.inCombat and api.inCombat() then
-        ns.Print("Cannot open the options window in combat. /qt debug still works.")
+        ns.Print("Cannot open the options window in combat. /qtf debug still works.")
         return
     end
     if category and api.settingsOpen then
@@ -388,7 +388,7 @@ local function OpenSettings()
         return
     end
     ns.Print("The options window is not available here (" .. ns.SafeStr(registeredVia)
-        .. "). /qt debug still works.")
+        .. "). /qtf debug still works.")
 end
 
 ns.commands.config   = OpenSettings
@@ -400,5 +400,5 @@ ns.AddDebugSection("settings panel", function(out)
     out("  category id:     " .. ns.SafeStr(category and (category.GetID and category:GetID() or category.ID)))
 end)
 
-ns.AddHelp("/qt config", "open the settings (also /qt settings)")
-ns.AddHelp("/qt debug", "show the debug report, ready to copy")
+ns.AddHelp("/qtf config", "open the settings (also /qtf settings)")
+ns.AddHelp("/qtf debug", "show the debug report, ready to copy")

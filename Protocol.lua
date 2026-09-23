@@ -115,7 +115,7 @@ local function ResultName(code)
 end
 
 -- What SendAddonMessage returns on this client is UNVERIFIED (docs/MEASUREMENTS.md,
--- "Still unverified"; /qt sendtest measures it). Older builds return a boolean;
+-- "Still unverified"; /qtf sendtest measures it). Older builds return a boolean;
 -- newer ones return an Enum.SendAddonMessageResult code where 0 means success.
 -- Until a human settles it, the result is read CONSERVATIVELY -- only the two
 -- shapes that mean failure under EITHER convention are failures, so an unknown
@@ -159,7 +159,7 @@ function ns.Send(payload, channel)
     return true
 end
 
--- Announce right now. Used by /qt ping, which is manual and explicit and should
+-- Announce right now. Used by /qtf ping, which is manual and explicit and should
 -- never feel laggy. Everything automatic goes through ns.AnnounceSoon instead.
 ---@return boolean ok
 ---@return string? err

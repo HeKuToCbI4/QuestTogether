@@ -27,7 +27,7 @@ Milestones, the M0 go/no-go gate, risk register and testing strategy.
       ← the only item still open, and the only one that can kill the project.
 
 > **Instrumented by v0.1.** The measurement probes that closed the first four items
-> (`/qt env`, `/qt probe`) were retired on 2026-09-21 — their results are recorded in
+> (`/qtf env`, `/qtf probe`) were retired on 2026-09-21 — their results are recorded in
 > [`MEASUREMENTS.md`](MEASUREMENTS.md#measurements-and-open-questions). The one remaining item — the fifth, the round-trip —
 > needs two grouped clients; the step-by-step procedure is in
 > [`docs/TESTING.md`](TESTING.md).
@@ -70,7 +70,7 @@ Milestones, the M0 go/no-go gate, risk register and testing strategy.
 - [ ] Request coalescing and the sliding-window throttle.
 - [x] The tri-state cache, including the "never write `false` from absence" invariant
       — `ns.RecordAnswer`, with its unit test in `tests/test_tristate.lua`.
-- [x] `/qt status` debug output.
+- [x] `/qtf status` debug output.
 
 ### M4 — UI integration · ~2.5 days
 
@@ -78,7 +78,7 @@ Milestones, the M0 go/no-go gate, risk register and testing strategy.
 - [ ] NPC gossip/available-quest list annotations (single coalesced request).
 - [ ] Tooltip integration.
 - [ ] Settings panel bound to the privacy toggles. *Partial:* the panel exists
-      (Options → AddOns, `/qt config`) with two test checkboxes that do nothing, and a
+      (Options → AddOns, `/qtf config`) with two test checkboxes that do nothing, and a
       "Copy debug info" button. **Built before the M0 gate closed**, at the user's
       request: a scaffold only — no setting changes behaviour yet.
 
@@ -147,7 +147,7 @@ carries, whether a message crosses between two clients. That is what
 
 > **Status: Partially implemented.** Layers 1 and 3 run offline in CI
 > (`lua5.1 tests/run.lua`). Layer 2 is unnecessary for what the suite already
-> reaches — `/qt test` is not implemented and may never need to be. Layer 4 is
+> reaches — `/qtf test` is not implemented and may never need to be. Layer 4 is
 > the written manual checklist in [`docs/TESTING.md`](TESTING.md).
 
 **Layer 1 — Pure functions, offline.** *Implemented for the revision-2 format.*
@@ -161,7 +161,7 @@ The codec is still the most bug-prone component ahead and the easiest to test.
 including edge cases: empty set, single ID, deltas crossing varint boundaries, and
 a full 64-value alphabet cycle. Write them test-first on top of the harness.
 
-**Layer 2 — In-game unit harness.** A `/qt test` entry point runs assertions against
+**Layer 2 — In-game unit harness.** A `/qtf test` entry point runs assertions against
 a mocked peer table and prints a pass/fail summary. Covers the tri-state cache
 invariants, sequence correlation, and timeout expiry.
 

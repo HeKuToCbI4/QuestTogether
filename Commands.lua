@@ -4,9 +4,9 @@ Commands -- the user-facing slash commands that do real work.
 Registered into ns.commands, a table Core dispatches into. Diagnostics.lua and
 UI.lua add their own entries to the same table.
 
-The asking itself lives in Query.lua; /qt and /qt ask are the thin front ends.
+The asking itself lives in Query.lua; /qtf and /qtf ask are the thin front ends.
 
-/qt help lives here because Commands is the one module that is never deleted: it
+/qtf help lives here because Commands is the one module that is never deleted: it
 prints ns.helpLines, which every module fills in for its own commands, so the
 list is always exactly the commands this install actually has.
 
@@ -23,7 +23,7 @@ ns.commands = ns.commands or {}
 function ns.commands.ask(rest)
     local questID = tonumber(rest) or ns.LocalQuestID()
     if not questID then
-        ns.Print("No quest selected. Open a quest at an NPC, or use /qt ask <questID>.")
+        ns.Print("No quest selected. Open a quest at an NPC, or use /qtf ask <questID>.")
         return
     end
     local ok, err = ns.Ask(questID)
@@ -47,7 +47,7 @@ end
 
 function ns.commands.status()
     if next(ns.peers) == nil then
-        ns.Print("No peers heard from yet. Try /qt ping while grouped.")
+        ns.Print("No peers heard from yet. Try /qtf ping while grouped.")
         return
     end
     for _, p in pairs(ns.peers) do
@@ -61,7 +61,7 @@ end
 ns.commands[""] = ns.commands.ask
 
 ------------------------------------------------------------------------------
--- /qt help
+-- /qtf help
 --
 -- Prints ns.helpLines in registration order, which follows the .toc: ungrouped
 -- lines first, then each group under its heading. Nothing here knows which
@@ -96,8 +96,8 @@ function ns.commands.help()
     end
 end
 
-ns.AddHelp("/qt",           "ask about the quest currently open")
-ns.AddHelp("/qt ask <id>",  "ask about a specific quest ID")
-ns.AddHelp("/qt ping",      "announce yourself to the group")
-ns.AddHelp("/qt status",    "list peers and how much we know")
-ns.AddHelp("/qt help",      "list these commands")
+ns.AddHelp("/qtf",           "ask about the quest currently open")
+ns.AddHelp("/qtf ask <id>",  "ask about a specific quest ID")
+ns.AddHelp("/qtf ping",      "announce yourself to the group")
+ns.AddHelp("/qtf status",    "list peers and how much we know")
+ns.AddHelp("/qtf help",      "list these commands")

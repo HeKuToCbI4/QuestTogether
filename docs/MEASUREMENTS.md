@@ -12,6 +12,9 @@ What was measured on the live client, open questions, and the API cheat sheet.
 
 Tracked here so they stay visible until closed.
 
+> The slash command was `/qt` until 2026-09-24 and is `/qtf` since. The dated runs
+> below are left as they were typed; everything after them uses `/qtf`.
+
 ### Measurement — 2026-09-20
 
 `/qt env` was run on the live client. Results:
@@ -206,14 +209,14 @@ unmeasured**; `/qt roster` prints both.
 ### Still unverified
 
 **1. Event payloads.** `QUEST_ACCEPTED` is believed to pass the quest ID as `arg1` —
-inferred from a crash's local state rather than observed cleanly. `/qt events` traces
+inferred from a crash's local state rather than observed cleanly. `/qtf events` traces
 the real arguments. Cheap to settle; do it before v0.2 relies on it.
 
 **2. Instance (LFG) groups.** `ns.GroupChannel` now returns `"INSTANCE_CHAT"` when
 `IsInGroup(<instance category>)` is true. **Half measured** (fifth run): the constant
 `LE_PARTY_CATEGORY_INSTANCE` exists (`2`) and `IsInGroup(2)` is accepted, returning
 `false` solo. Still unobserved: that it returns `true` inside an instance group. The
-lookup stays guarded, so a miss simply leaves the old `"RAID"` / `"PARTY"` behaviour. `/qt channel` prints whether
+lookup stays guarded, so a miss simply leaves the old `"RAID"` / `"PARTY"` behaviour. `/qtf channel` prints whether
 `LE_PARTY_CATEGORY_INSTANCE` (or `Enum.PartyCategory.Instance`) exists and its value,
 what `IsInGroup(<category>)`, `IsInGroup()` and `IsInRaid()` return, and the channel
 that would be used. Run it **three times** — solo, in a normal party, and inside an
@@ -230,7 +233,7 @@ solo** (fifth run): this client returns the numeric code — `5` = `NotInGroup` 
 `Enum.SendAddonMessageResult` exists. The grouped and the spam runs below are still
 owed.
 
-`/qt sendtest` measures it: it calls the raw API with a presence payload and prints
+`/qtf sendtest` measures it: it calls the raw API with a presence payload and prints
 every return value, its type, and the count of values returned. Run it three ways and
 record all three:
 
@@ -254,7 +257,7 @@ sheet shade, the quest title's face for the heading and the description's font a
 size for the text (screenshot, 2026-09-24). So a quest font string and the tint are
 found — but *which* ones, and whether `QuestFrame` reports a strata and level the
 panel can sit under (the slide), are still unrecorded. [`TESTING.md`](TESTING.md) row A15 is the check; record the
-`/qt parchment` output here.
+`/qtf parchment` output here.
 
 **5. The Options window and the copy window.** The settings panel registers through
 `Settings.RegisterCanvasLayoutCategory` + `Settings.RegisterAddOnCategory` and opens
@@ -272,7 +275,7 @@ checkbox, button and scroll templates ([`TESTING.md`](TESTING.md) A16).
 
 **6. Everything requiring two grouped clients.** The first grouped run (sixth run)
 showed `H`, `Q` and `A` crossing in one direction. Still owed: the reverse direction,
-the comparison with the truth, `/qt roster`, and grouped `/qt sendtest`. Before that,
+the comparison with the truth, `/qtf roster`, and grouped `/qtf sendtest`. Before that,
 every run had been solo (`channel : no (solo)`). The addon-message round-trip, group identity under the secret
 rules, and cross-client quest queries all remain open.
 
@@ -286,7 +289,7 @@ rules, and cross-client quest queries all remain open.
 | Q1 | Correct `## Interface` value? | **Closed** | `16001`. Version `1.60.1` packs as major/minor/patch → `16001`. There was never a conflict; the version string simply does not describe the API generation. |
 | Q2 | Which directory does Forever load addons from? | **Closed** | `<WoW>\_classic_beta_\Interface\AddOns\`. Measured 2026-09-21: a fresh copy placed there loaded after `/reload` (fifth run). |
 | Q3 | Does a native party-quest-progress API exist? | **Closed — negative** | `GetQuestPartyProgress`, `QuestHasPartyProgress` and `GetQuestLogPartyMembers` are all absent. No native support, so nothing is duplicated. |
-| Q4 | Are addon messages rate-limited differently here? | Open | **The remaining gate.** Needs two grouped clients. `/qt sendtest`, run repeatedly while grouped, is the instrument: a throttle should show up as a changed return value (see "Still unverified" item 2). |
+| Q4 | Are addon messages rate-limited differently here? | Open | **The remaining gate.** Needs two grouped clients. `/qtf sendtest`, run repeatedly while grouped, is the instrument: a throttle should show up as a changed return value (see "Still unverified" item 2). |
 | Q5 | Do quest frame objects keep Mainline names and structure? | Open | M4 |
 | Q6 | Does the default quest log already show party progress? | **Effectively closed** | No backing API exists ([Q3](#open-questions)), and UI cannot show what no API provides. Confirm visually while grouped. |
 | Q7 | Is `name-realm` a stable peer key? | Open — narrowed | **No, not as a split string:** names can contain a space, and the roster then spells them `First-Last`, indistinguishable from `Name-Realm` (sixth run, [#24](https://github.com/HeKuToCbI4/quest-together-forever-wow-addon/issues/24)). `ns.PeerKey` now builds a split-independent key from name + realm (own realm cut off, spaces and hyphens dropped), instead of the bare name that made two realms collide. `GetNormalizedRealmName` is confirmed to work. `GetNormalizedRealmName` exists and returns `ClassicBetaPvE`; `UnitFullName("player")` returns the name and that realm, `UnitName("player")` the name and `nil` (debug report, 2026-09-24). Still **unmeasured**: what realm suffix `CHAT_MSG_ADDON` actually puts on `sender` for a same-realm and a cross-realm peer. Record both in the two-client test ([TESTING.md §B](TESTING.md#b-two-client-round-trip--the-m0-gate), "Observations"). |

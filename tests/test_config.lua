@@ -29,7 +29,7 @@ local function printed(env, needle)
     return false
 end
 
-h.test("registers with the Settings API and opens on /qt config and /qt settings",
+h.test("registers with the Settings API and opens on /qtf config and /qtf settings",
     { globals = { Settings = fakeSettings() } },
     function(env, ns)
         local s = _G.Settings
@@ -38,12 +38,12 @@ h.test("registers with the Settings API and opens on /qt config and /qt settings
         h.ok(s.addon, "added to the AddOns tab")
         ns.commands.config()
         ns.commands.settings()
-        h.eq(s.opened[1], 42, "/qt config opens our category by ID")
-        h.eq(s.opened[2], 42, "/qt settings too")
+        h.eq(s.opened[1], 42, "/qtf config opens our category by ID")
+        h.eq(s.opened[2], 42, "/qtf settings too")
     end)
 
-h.test("no options API: /qt config says so, and nothing breaks", function(env, ns)
-    h.noError(function() ns.commands.config() end, "/qt config")
+h.test("no options API: /qtf config says so, and nothing breaks", function(env, ns)
+    h.noError(function() ns.commands.config() end, "/qtf config")
     h.isTrue(printed(env, "not available"), "the user is told")
 end)
 
@@ -106,7 +106,7 @@ h.test("one broken section does not break the report", function(env, ns)
     h.isTrue(report:find("## status panel", 1, true) ~= nil, "later sections still there")
 end)
 
-h.test("/qt debug opens the copy window without error", function(env, ns)
-    h.noError(function() ns.commands.debug() end, "/qt debug")
+h.test("/qtf debug opens the copy window without error", function(env, ns)
+    h.noError(function() ns.commands.debug() end, "/qtf debug")
     h.noError(function() ns.commands.debug() end, "and again, reusing the window")
 end)
