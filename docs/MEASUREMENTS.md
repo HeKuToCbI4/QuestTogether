@@ -2,7 +2,7 @@
 
 What was measured on the live client, open questions, and the API cheat sheet.
 
-> Part of the Quest Together design docs — index: [`PLAN.md`](../PLAN.md). Sections are
+> Part of the Quest With A Friend design docs — index: [`PLAN.md`](../PLAN.md). Sections are
 > marked **Implemented**, **Partially implemented** or **Planned**; for current
 > behaviour the code is authoritative.
 
@@ -133,7 +133,7 @@ surface needs measuring.
 ### Fifth run — first install into the game folder (2026-09-21)
 
 Build `fd7e9ac` was copied into
-`<WoW>\_classic_beta_\Interface\AddOns\QuestTogether\` and loaded after `/reload`.
+`<WoW>\_classic_beta_\Interface\AddOns\QuestWithAFriend\` and loaded after `/reload`.
 Solo, on the same client (1.60.1). Three results:
 
 | Probe | Result |
@@ -186,7 +186,7 @@ materialise.
 | `UnitName("player")` | `Itemys Targaryen`, `nil` |
 | `UnitFullName("player")` | `Itemys Targaryen`, `ClassicBetaPvE` |
 
-**And a bug the run found ([#24](https://github.com/HeKuToCbI4/QuestTogether/issues/24)).**
+**And a bug the run found ([#24](https://github.com/HeKuToCbI4/quest-with-a-friend-wow-addon/issues/24)).**
 Character names here can contain a **space**. The summary that followed the live line
 above read:
 
@@ -264,7 +264,7 @@ rules, and cross-client quest queries all remain open.
 | Q4 | Are addon messages rate-limited differently here? | Open | **The remaining gate.** Needs two grouped clients. `/qt sendtest`, run repeatedly while grouped, is the instrument: a throttle should show up as a changed return value (see "Still unverified" item 2). |
 | Q5 | Do quest frame objects keep Mainline names and structure? | Open | M4 |
 | Q6 | Does the default quest log already show party progress? | **Effectively closed** | No backing API exists ([Q3](#open-questions)), and UI cannot show what no API provides. Confirm visually while grouped. |
-| Q7 | Is `name-realm` a stable peer key? | Open — narrowed | **No, not as a split string:** names can contain a space, and the roster then spells them `First-Last`, indistinguishable from `Name-Realm` (sixth run, [#24](https://github.com/HeKuToCbI4/QuestTogether/issues/24)). `ns.PeerKey` now builds a split-independent key from name + realm (own realm cut off, spaces and hyphens dropped), instead of the bare name that made two realms collide. `GetNormalizedRealmName` is confirmed to work. Two things are still **unmeasured** on this client: whether `GetNormalizedRealmName` exists (the code falls back to a bare key if not; `/dump` printed nothing, so `/qt realm` is the instrument — fifth run), and what realm suffix `CHAT_MSG_ADDON` actually puts on `sender` for a same-realm and a cross-realm peer. Record both in the two-client test ([TESTING.md §B](TESTING.md#b-two-client-round-trip--the-m0-gate), "Observations"). |
+| Q7 | Is `name-realm` a stable peer key? | Open — narrowed | **No, not as a split string:** names can contain a space, and the roster then spells them `First-Last`, indistinguishable from `Name-Realm` (sixth run, [#24](https://github.com/HeKuToCbI4/quest-with-a-friend-wow-addon/issues/24)). `ns.PeerKey` now builds a split-independent key from name + realm (own realm cut off, spaces and hyphens dropped), instead of the bare name that made two realms collide. `GetNormalizedRealmName` is confirmed to work. Two things are still **unmeasured** on this client: whether `GetNormalizedRealmName` exists (the code falls back to a bare key if not; `/dump` printed nothing, so `/qt realm` is the instrument — fifth run), and what realm suffix `CHAT_MSG_ADDON` actually puts on `sender` for a same-realm and a cross-realm peer. Record both in the two-client test ([TESTING.md §B](TESTING.md#b-two-client-round-trip--the-m0-gate), "Observations"). |
 
 ---
 

@@ -1,9 +1,8 @@
 # CurseForge project description
 
 Draft text for the CurseForge project page. The published name is **Quest With A
-Friend**; the repository, the addon folder and the `.toc` are still `QuestTogether`.
-CurseForge does not require the two to match, so nothing here forces a rename —
-see "Naming" at the bottom.
+Friend**, matching the addon folder, `.toc` and GitHub repository
+(`quest-with-a-friend-wow-addon`).
 
 Edit this file first, then paste into the CurseForge project editor (the description
 field renders Markdown).
@@ -108,7 +107,7 @@ commands to exist purely for measuring the client.
 
 ## Links
 
-- Source and full design docs: https://github.com/HeKuToCbI4/QuestTogether
+- Source and full design docs: https://github.com/HeKuToCbI4/quest-with-a-friend-wow-addon
 - Issues and feedback are welcome there — especially if you can run it with a full
   group and tell us what the panel showed.
 
@@ -116,23 +115,16 @@ commands to exist purely for measuring the client.
 
 ## Naming
 
-The published name is **Quest With A Friend**; the folder and `.toc` are
-`QuestTogether`, and the `.toc` `## Title` currently reads "Quest Together". Two
-options, and one thing to be careful about either way:
+The addon is named **Quest With A Friend**. The folder, the `.toc` filename and
+`## Title` were renamed together from `QuestTogether`, in one change — the client
+loads `<FolderName>.toc` and silently skips the addon when the two differ (this
+already happened once: `QuestWithFirends.toc` was an early stub, and the folder was
+renamed from `WowQuestAddon` for the same reason). The GitHub repository is now
+named `quest-with-a-friend-wow-addon`.
 
-1. **Rename the addon to match.** The folder name *must* equal the `.toc` filename —
-   the client loads `<FolderName>.toc` and silently skips the addon when they differ
-   (this already happened once: `QuestWithFirends.toc` was an early stub, and the
-   folder was renamed from `WowQuestAddon` for the same reason). So a rename means
-   folder, `.toc` filename and `## Title` together, in one change; a half-rename
-   breaks loading. It also invalidates every existing install (a second copy under a
-   different folder name loads *twice* and double-answers).
-2. **Keep `QuestTogether` internally, publish under the new name.** Nothing breaks,
-   but users searching CurseForge for "Quest With A Friend" get a folder called
-   `QuestTogether` inside their `AddOns/`, and in-game the AddOns list shows whatever
-   `## Title` says.
+`SavedVariables` is now `QuestWithAFriendDB`. It is unrelated to the display name,
+but was renamed alongside everything else because v0.0.2 saves nothing yet; renaming
+it later would silently drop people's saved data.
 
-Either way, decide before the first upload — renaming after people have installed it is
-the expensive case. `SavedVariables` is `QuestTogetherDB` and is unrelated to the
-display name, but renaming that too would silently drop people's saved data (not that
-v0.0.2 saves anything yet).
+Do not rename again after the first upload — a folder that changes name after people
+have installed it loads twice and double-answers.
