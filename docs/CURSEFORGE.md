@@ -54,10 +54,11 @@ A member who hasn't answered, runs a different version, or doesn't have the addo
 shows `?`, worded so you can tell which of those it is. Everyone in your group gets a
 line, whether or not they run the addon.
 
-## What you get today (v0.0.3)
+## What you get today (v0.0.4)
 
-- **Status popup beside the quest frame** — your own completion state, read live from
-  the client, and one line per group member.
+- **Status popup beside the quest frame** — it slides out from under the quest window
+  on the same parchment, with your own completion state, read live from the client,
+  and one line per group member.
 - **Automatic asking** — opening a quest asks the group about it silently. Once per
   quest, and again after someone joins your group.
 - **"On it now"** — a member who has the quest in their log but hasn't finished it is
@@ -65,6 +66,9 @@ line, whether or not they run the addon.
 - **Chat mode** — `/qtf` asks on demand and reports answers in chat.
 - **Version check** — peers on an incompatible protocol revision are marked as such and
   never answered or parsed.
+- **Settings page** — Esc → Options → AddOns, or `/qtf config`. For now: two test
+  checkboxes and **Copy debug info** (also `/qtf debug`), a report to paste into bug
+  reports.
 
 Open a quest and the popup appears. `/qtf help` lists the commands.
 
@@ -87,7 +91,7 @@ That is the whole mechanism, so it is worth stating plainly:
 - **When:** a presence announcement goes out when you enter the world and on group
   changes; a completion answer goes out whenever any group member opens a quest or
   types `/qtf`. You are not prompted.
-- **No settings yet.** v0.0.3 has no opt-out — the only way to stop answering is to
+- **No opt-out yet.** v0.0.4 has a settings page but no real settings — the only way to stop answering is to
   disable the addon. Two independent toggles (answer queries / share quest log) are
   planned.
 

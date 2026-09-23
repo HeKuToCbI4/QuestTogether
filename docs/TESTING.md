@@ -18,7 +18,7 @@ Run after every change, before anything else.
 | # | Step | Expected |
 |---|---|---|
 | A1 | `/reload`, then check the AddOns list | **Quest Together Forever** is listed and enabled. No Lua error on load. |
-| A2 | `/qtf help` | Header `v0.0.2 -- commands:` (the version comes from the `.toc`), then `/qtf`, `/qtf ask <id>`, `/qtf ping`, `/qtf status`, `/qtf help`, `/qtf config`, `/qtf debug`, `/qtf ui`, then `-- still-open probes --` with `/qtf events`, `/qtf frames`, `/qtf channel`, `/qtf sendtest`, `/qtf realm`, `/qtf roster` and `/qtf parchment`. |
+| A2 | `/qtf help` | Header `v0.0.4 -- commands:` (the version comes from the `.toc`), then `/qtf`, `/qtf ask <id>`, `/qtf ping`, `/qtf status`, `/qtf help`, `/qtf config`, `/qtf debug`, `/qtf ui`, then `-- still-open probes --` with `/qtf events`, `/qtf frames`, `/qtf channel`, `/qtf sendtest`, `/qtf realm`, `/qtf roster` and `/qtf parchment`. |
 | A3 | `/qtf ui` | Popup appears: `No quest open.` `/qtf ui` again hides it. |
 | A4 | `/qtf` with no quest open | `No quest selected. Open a quest at an NPC, or use /qtf ask <questID>.` |
 | A5 | `/qtf ask 92460` while solo | `Cannot ask: not in a group` |

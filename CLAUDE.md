@@ -2,7 +2,7 @@
 
 World of Warcraft addon (Lua 5.1 dialect, WoW Forever client). It shows which group
 members have already completed a quest, by having each client answer for its own
-character over group-only addon messages. Status: v0.0.2 prototype.
+character over group-only addon messages. Status: v0.0.4 prototype.
 
 ## Rules that must never be broken
 

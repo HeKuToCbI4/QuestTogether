@@ -8,7 +8,7 @@ need it too, or are you about to drag them through content they finished months 
 Quest Together Forever answers that. It asks everyone in your group about the quest you are
 looking at, and shows you who has already completed it.
 
-> **Status:** v0.0.3 — early prototype. Chat-driven, plus a minimal status popup.
+> **Status:** v0.0.4 — early prototype. Chat-driven, plus a status popup and a settings page.
 > The addon-message round-trip between two real clients is **not yet verified**
 > (see [`docs/TESTING.md`](docs/TESTING.md)). What works today and what is only
 > planned are listed separately [below](#what-it-does).
@@ -31,7 +31,7 @@ prevent.
 
 What you see for a group member:
 
-| Situation | v0.0.3 (today) | Planned |
+| Situation | v0.0.4 (today) | Planned |
 |---|---|---|
 | Peer running the addon, answered | `yes` / `no` / `on it now` | ✓ / ✗ / ◈ glyphs |
 | Peer running the addon, no answer (yet, or timed out) | `?  (no answer)` | `?` with a "no response" hint |
@@ -50,11 +50,12 @@ as "no".
 
 ## What it does
 
-### Works today (v0.0.3)
+### Works today (v0.0.4)
 
-- **Status popup beside the quest frame.** Open a quest at an NPC: the popup shows
-  your own completion state (live from the client) and one line per group member,
-  taken from the roster so that nobody is silently missing.
+- **Status popup beside the quest frame.** Open a quest at an NPC: the popup slides
+  out from under the quest frame, on the quest's own parchment, and shows your own
+  completion state (live from the client) and one line per group member, taken from
+  the roster so that nobody is silently missing.
 - **Auto-ask.** Opening a quest — offered, in progress or ready to turn in — asks the
   group about it, silently: the answers appear in the popup, not in chat. Every
   opening asks afresh, so the popup shows what is true *now*, not a cached answer.
@@ -64,6 +65,9 @@ as "no".
   reported separately from a plain "no".
 - **Version check.** Peers on a different protocol revision are marked incompatible
   and never answered or parsed.
+- **Settings page and debug report.** Esc → Options → AddOns → Quest Together Forever,
+  or `/qtf config`. It holds two test checkboxes (they do nothing yet) and a
+  **Copy debug info** button (also `/qtf debug`) for bug reports.
 
 ### Planned (not implemented)
 
@@ -72,7 +76,7 @@ Specified in [`docs/UX.md`](docs/UX.md#ux-specification); none of this exists ye
 - **Quest log annotations** — every quest in your log, labelled with who still needs it.
 - **Available-quest lists** — all quests an NPC offers annotated at once.
 - **Eager quest-log sync** — "who's on it" without asking.
-- **Tooltips, glyph markers, settings panel, privacy toggles.**
+- **Tooltips, glyph markers, privacy toggles** (the settings page exists; the toggles do not).
 
 ---
 
@@ -143,7 +147,7 @@ buried:
     not sent one recently. Bursts are coalesced into one message every few seconds.
   - A completion answer is sent **automatically** whenever any group member asks
     (their `/qtf`, or them simply opening a quest). You are not prompted.
-- **Control: there is none yet.** v0.0.3 has no settings. The only way to stop
+- **Control: there is none yet.** v0.0.4 has a settings page but no real settings. The only way to stop
   answering is to disable the addon — peers then see no entry for you. Two
   independent toggles (answer queries / share quest log) are planned
   ([data model](docs/ARCHITECTURE.md#data-model)) and tracked as an issue.

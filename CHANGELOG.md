@@ -2,7 +2,7 @@
 
 Version numbers follow the `## Version` field of `QuestTogetherForever.toc`.
 
-## Unreleased
+## 0.0.4
 
 ### Added
 - A settings page: Esc → Options → AddOns → Quest Together Forever, or `/qtf config`

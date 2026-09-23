@@ -2,7 +2,7 @@
 ## Title: Quest Together Forever
 ## Notes: See which of your party members have already completed a quest.
 ## Author: HeKuToCbI4
-## Version: 0.0.3
+## Version: 0.0.4
 ## X-Curse-Project-ID: 1706296
 ## SavedVariables: QuestTogetherForeverDB
 
